@@ -35,6 +35,8 @@ func TestBaseTypeConvertToJsValue(t *testing.T) {
 		{"uint64 max", uint64(math.MaxInt64), int64(math.MaxInt64), nil},
 		// 通过json方式转换之后，数字类型，最终变为了float64
 		{"struct to map", stru, map[string]any{"Age": float64(stru.Age), "name": stru.Name}, nil},
+		{"array string", []string{"a", "b", "c"}, []any{"a", "b", "c"}, nil},
+		{"array mix", []any{"a", "b", "c", 123, 4.6}, []any{"a", "b", "c", 123.0, 4.6}, nil},
 	}
 	ctx := v8.NewContext()
 	defer ctx.Isolate().Dispose()
