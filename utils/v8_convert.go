@@ -74,8 +74,24 @@ func ToJsValue(c *v8.Context, gVal any) (res *v8.Value, err error) {
 	case PromiseT:
 		return gVal.(PromiseT).v, nil
 	default:
-		return ToJsValue(c, v)
+		return JsValueParse(c, v)
 	}
+}
+
+func JsValueParse(c *v8.Context, gVal any) (*v8.Value, error) {
+	iso := c.Isolate()
+	if nil == gVal {
+		return v8.Null(iso), nil
+	}
+	d, err := json.Marshal(gVal)
+	if err != nil {
+		return nil, err
+	}
+	jVal, err := v8.JSONParse(c, string(d))
+	if err != nil {
+		return nil, err
+	}
+	return jVal, nil
 }
 
 func ToGoValues(c *v8.Context, jVals []*v8.Value) (res []any, err error) {
