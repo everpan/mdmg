@@ -1,0 +1,32 @@
+{
+ "Name": "SysLogoLink",
+ "TableName": "",
+ "FieldName": "",
+ "FieldIndex": null,
+ "SQLType": {
+  "Name": "VARCHAR",
+  "DefaultLength": 50,
+  "DefaultLength2": 0
+ },
+ "IsJSON": false,
+ "Length": 50,
+ "Length2": 0,
+ "Nullable": true,
+ "Default": "",
+ "Indexes": {},
+ "IsPrimaryKey": false,
+ "IsAutoIncrement": false,
+ "MapType": 0,
+ "IsCreated": false,
+ "IsUpdated": false,
+ "IsDeleted": false,
+ "IsCascade": false,
+ "IsVersion": false,
+ "DefaultIsEmpty": true,
+ "EnumOptions": null,
+ "SetOptions": null,
+ "DisableTimeZone": false,
+ "TimeZone": null,
+ "Comment": "null",
+ "Collation": "utf8mb4_0900_ai_ci"
+}

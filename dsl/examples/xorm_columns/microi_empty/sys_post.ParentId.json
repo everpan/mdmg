@@ -1,0 +1,32 @@
+{
+ "Name": "ParentId",
+ "TableName": "",
+ "FieldName": "",
+ "FieldIndex": null,
+ "SQLType": {
+  "Name": "VARCHAR",
+  "DefaultLength": 40,
+  "DefaultLength2": 0
+ },
+ "IsJSON": false,
+ "Length": 40,
+ "Length2": 0,
+ "Nullable": false,
+ "Default": "'00000000-0000-0000-0000-000000000000'",
+ "Indexes": {},
+ "IsPrimaryKey": false,
+ "IsAutoIncrement": false,
+ "MapType": 0,
+ "IsCreated": false,
+ "IsUpdated": false,
+ "IsDeleted": false,
+ "IsCascade": false,
+ "IsVersion": false,
+ "DefaultIsEmpty": false,
+ "EnumOptions": null,
+ "SetOptions": null,
+ "DisableTimeZone": false,
+ "TimeZone": null,
+ "Comment": "",
+ "Collation": "utf8mb4_0900_ai_ci"
+}

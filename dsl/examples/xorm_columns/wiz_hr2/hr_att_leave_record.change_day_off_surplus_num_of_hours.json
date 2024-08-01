@@ -1,0 +1,32 @@
+{
+ "Name": "change_day_off_surplus_num_of_hours",
+ "TableName": "",
+ "FieldName": "",
+ "FieldIndex": null,
+ "SQLType": {
+  "Name": "FLOAT",
+  "DefaultLength": 0,
+  "DefaultLength2": 0
+ },
+ "IsJSON": false,
+ "Length": 0,
+ "Length2": 0,
+ "Nullable": false,
+ "Default": "0",
+ "Indexes": {},
+ "IsPrimaryKey": false,
+ "IsAutoIncrement": false,
+ "MapType": 0,
+ "IsCreated": false,
+ "IsUpdated": false,
+ "IsDeleted": false,
+ "IsCascade": false,
+ "IsVersion": false,
+ "DefaultIsEmpty": false,
+ "EnumOptions": null,
+ "SetOptions": null,
+ "DisableTimeZone": false,
+ "TimeZone": null,
+ "Comment": "",
+ "Collation": ""
+}

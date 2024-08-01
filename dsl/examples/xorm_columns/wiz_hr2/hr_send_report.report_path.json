@@ -1,0 +1,32 @@
+{
+ "Name": "report_path",
+ "TableName": "",
+ "FieldName": "",
+ "FieldIndex": null,
+ "SQLType": {
+  "Name": "VARCHAR",
+  "DefaultLength": 400,
+  "DefaultLength2": 0
+ },
+ "IsJSON": false,
+ "Length": 400,
+ "Length2": 0,
+ "Nullable": false,
+ "Default": "''",
+ "Indexes": {},
+ "IsPrimaryKey": false,
+ "IsAutoIncrement": false,
+ "MapType": 0,
+ "IsCreated": false,
+ "IsUpdated": false,
+ "IsDeleted": false,
+ "IsCascade": false,
+ "IsVersion": false,
+ "DefaultIsEmpty": false,
+ "EnumOptions": null,
+ "SetOptions": null,
+ "DisableTimeZone": false,
+ "TimeZone": null,
+ "Comment": "",
+ "Collation": "utf8mb4_unicode_ci"
+}

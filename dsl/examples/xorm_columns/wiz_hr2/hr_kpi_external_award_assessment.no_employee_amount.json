@@ -1,0 +1,32 @@
+{
+ "Name": "no_employee_amount",
+ "TableName": "",
+ "FieldName": "",
+ "FieldIndex": null,
+ "SQLType": {
+  "Name": "DECIMAL",
+  "DefaultLength": 10,
+  "DefaultLength2": 2
+ },
+ "IsJSON": false,
+ "Length": 10,
+ "Length2": 2,
+ "Nullable": true,
+ "Default": "",
+ "Indexes": {},
+ "IsPrimaryKey": false,
+ "IsAutoIncrement": false,
+ "MapType": 0,
+ "IsCreated": false,
+ "IsUpdated": false,
+ "IsDeleted": false,
+ "IsCascade": false,
+ "IsVersion": false,
+ "DefaultIsEmpty": true,
+ "EnumOptions": null,
+ "SetOptions": null,
+ "DisableTimeZone": false,
+ "TimeZone": null,
+ "Comment": "",
+ "Collation": ""
+}

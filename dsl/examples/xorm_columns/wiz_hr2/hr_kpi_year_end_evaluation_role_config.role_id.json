@@ -1,0 +1,32 @@
+{
+ "Name": "role_id",
+ "TableName": "",
+ "FieldName": "",
+ "FieldIndex": null,
+ "SQLType": {
+  "Name": "VARCHAR",
+  "DefaultLength": 36,
+  "DefaultLength2": 0
+ },
+ "IsJSON": false,
+ "Length": 36,
+ "Length2": 0,
+ "Nullable": false,
+ "Default": "",
+ "Indexes": {},
+ "IsPrimaryKey": false,
+ "IsAutoIncrement": false,
+ "MapType": 0,
+ "IsCreated": false,
+ "IsUpdated": false,
+ "IsDeleted": false,
+ "IsCascade": false,
+ "IsVersion": false,
+ "DefaultIsEmpty": true,
+ "EnumOptions": null,
+ "SetOptions": null,
+ "DisableTimeZone": false,
+ "TimeZone": null,
+ "Comment": "",
+ "Collation": "utf8mb4_unicode_ci"
+}

@@ -1,0 +1,32 @@
+{
+ "Name": "employment_end_date",
+ "TableName": "",
+ "FieldName": "",
+ "FieldIndex": null,
+ "SQLType": {
+  "Name": "DATETIME",
+  "DefaultLength": 0,
+  "DefaultLength2": 0
+ },
+ "IsJSON": false,
+ "Length": 0,
+ "Length2": 0,
+ "Nullable": false,
+ "Default": "'9999-12-31 00:00:00'",
+ "Indexes": {},
+ "IsPrimaryKey": false,
+ "IsAutoIncrement": false,
+ "MapType": 0,
+ "IsCreated": false,
+ "IsUpdated": false,
+ "IsDeleted": false,
+ "IsCascade": false,
+ "IsVersion": false,
+ "DefaultIsEmpty": false,
+ "EnumOptions": null,
+ "SetOptions": null,
+ "DisableTimeZone": false,
+ "TimeZone": null,
+ "Comment": "",
+ "Collation": ""
+}

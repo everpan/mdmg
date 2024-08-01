@@ -1,0 +1,32 @@
+{
+ "Name": "honor_score_weight",
+ "TableName": "",
+ "FieldName": "",
+ "FieldIndex": null,
+ "SQLType": {
+  "Name": "DECIMAL",
+  "DefaultLength": 6,
+  "DefaultLength2": 2
+ },
+ "IsJSON": false,
+ "Length": 6,
+ "Length2": 2,
+ "Nullable": false,
+ "Default": "",
+ "Indexes": {},
+ "IsPrimaryKey": false,
+ "IsAutoIncrement": false,
+ "MapType": 0,
+ "IsCreated": false,
+ "IsUpdated": false,
+ "IsDeleted": false,
+ "IsCascade": false,
+ "IsVersion": false,
+ "DefaultIsEmpty": true,
+ "EnumOptions": null,
+ "SetOptions": null,
+ "DisableTimeZone": false,
+ "TimeZone": null,
+ "Comment": "",
+ "Collation": ""
+}

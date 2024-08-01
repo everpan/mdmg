@@ -1,0 +1,49 @@
+{
+  "name": "书籍分类",
+  "table": {
+    "name": "category",
+    "comment": "书籍分类"
+  },
+  "columns": [
+    {
+      "label": "ID",
+      "name": "id",
+      "type": "ID",
+      "comment": "ID",
+      "primary": true
+    },
+    {
+      "label": "父级id",
+      "name": "parent_id",
+      "type": "integer",
+      "nullable": true
+    },
+    {
+      "label": "分类名称",
+      "name": "name",
+      "type": "string",
+      "length1": 128,
+      "index": true
+    }
+  ],
+  "relations": {
+    "book": {
+      "type": "hasMany",
+      "model": "book",
+      "key": "category_id",
+      "foreign": "id",
+      "query": {}
+    },
+    "parent": {
+      "type": "hasOne",
+      "model": "category",
+      "key": "id",
+      "foreign": "parent_id",
+      "query": {}
+    }
+  },
+  "option": {
+    "timestamps": true,
+    "soft_deletes": true
+  }
+}

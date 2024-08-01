@@ -1,0 +1,32 @@
+{
+ "Name": "ShangjiaPF",
+ "TableName": "",
+ "FieldName": "",
+ "FieldIndex": null,
+ "SQLType": {
+  "Name": "DECIMAL",
+  "DefaultLength": 18,
+  "DefaultLength2": 1
+ },
+ "IsJSON": false,
+ "Length": 18,
+ "Length2": 1,
+ "Nullable": true,
+ "Default": "",
+ "Indexes": {},
+ "IsPrimaryKey": false,
+ "IsAutoIncrement": false,
+ "MapType": 0,
+ "IsCreated": false,
+ "IsUpdated": false,
+ "IsDeleted": false,
+ "IsCascade": false,
+ "IsVersion": false,
+ "DefaultIsEmpty": true,
+ "EnumOptions": null,
+ "SetOptions": null,
+ "DisableTimeZone": false,
+ "TimeZone": null,
+ "Comment": "商家评分",
+ "Collation": ""
+}

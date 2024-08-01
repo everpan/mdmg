@@ -1,0 +1,32 @@
+{
+ "Name": "finished_at",
+ "TableName": "",
+ "FieldName": "",
+ "FieldIndex": null,
+ "SQLType": {
+  "Name": "DATETIME",
+  "DefaultLength": 3,
+  "DefaultLength2": 0
+ },
+ "IsJSON": false,
+ "Length": 3,
+ "Length2": 0,
+ "Nullable": true,
+ "Default": "",
+ "Indexes": {},
+ "IsPrimaryKey": false,
+ "IsAutoIncrement": false,
+ "MapType": 0,
+ "IsCreated": false,
+ "IsUpdated": false,
+ "IsDeleted": false,
+ "IsCascade": false,
+ "IsVersion": false,
+ "DefaultIsEmpty": true,
+ "EnumOptions": null,
+ "SetOptions": null,
+ "DisableTimeZone": false,
+ "TimeZone": null,
+ "Comment": "",
+ "Collation": ""
+}

@@ -1,0 +1,20 @@
+{
+  "columns": [
+    {
+      "label": "ID",
+      "name": "id1",
+      "note": "自定义的类型，通常被`xorm`直接传值；通常不可用",
+      "type": "uint32",
+      "default": "34"
+    },
+    {
+      "name": "id2",
+      "type": "unsigned bigint",
+      "default": "45"
+    },{
+      "name": "id3",
+      "type": "unsigned int",
+      "default": "67"
+    }
+  ]
+}
