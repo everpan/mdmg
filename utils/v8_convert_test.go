@@ -14,7 +14,7 @@ func TestBaseTypeConvertToJsValue(t *testing.T) {
 		Name string `json:"name"`
 		Age  int32  // converted to float64
 	}{"golang", 15}
-
+	tBytes := []byte{34, 56, 78, 112, 129, 255}
 	tests := []struct {
 		name    string
 		gVal    any
@@ -37,6 +37,7 @@ func TestBaseTypeConvertToJsValue(t *testing.T) {
 		{"struct to map", stru, map[string]any{"Age": float64(stru.Age), "name": stru.Name}, nil},
 		{"array string", []string{"a", "b", "c"}, []any{"a", "b", "c"}, nil},
 		{"array mix", []any{"a", "b", "c", 123, 4.6}, []any{"a", "b", "c", 123.0, 4.6}, nil},
+		{"[]byte", tBytes, tBytes, nil},
 	}
 	ctx := v8.NewContext()
 	defer ctx.Isolate().Dispose()

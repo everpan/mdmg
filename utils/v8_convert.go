@@ -42,7 +42,21 @@ func ToJsValue(c *v8.Context, gVal any) (res *v8.Value, err error) {
 	switch v := gVal.(type) {
 	case string, bool, *big.Int, float64:
 		return v8.NewValue(iso, v)
+	case []byte:
+		newObj, err := c.RunScript(fmt.Sprintf("new Uint8Array(%d)", len(v)), "v8_convert.js")
+		if err != nil {
+			return nil, err
+		}
 
+		jsObj, err := newObj.AsObject()
+		if err != nil {
+			return nil, err
+		}
+
+		for i := 0; i < len(v); i++ {
+			jsObj.SetIdx(uint32(i), uint32(v[i]))
+		}
+		return jsObj.Value, nil
 	case int8:
 		return v8.NewValue(iso, int32(v))
 	case int16:
@@ -128,9 +142,27 @@ func ToGoValue(c *v8.Context, jVal *v8.Value) (any, error) {
 		}
 		return jVal.Number(), nil
 	}
-	//if jVal.IsSharedArrayBuffer() { // []byte
-	//	buf, cleanFn, err := jVal.Sha
-	//}
+	if jVal.IsUint8Array() { // bytes
+		arr, err := jVal.AsObject()
+		if err != nil {
+			return nil, err
+		}
+
+		length, err := arr.Get("length")
+		if err != nil {
+			return nil, err
+		}
+
+		gVal := make([]byte, length.Uint32())
+		for i := uint32(0); i < length.Uint32(); i++ {
+			v, err := arr.GetIdx(i)
+			if err != nil {
+				return nil, err
+			}
+			gVal[i] = byte(v.Uint32())
+		}
+		return gVal, nil
+	}
 	if jVal.IsArray() {
 		return goValueParse(jVal, []any{})
 	}
