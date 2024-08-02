@@ -203,6 +203,39 @@ func ReleaseJsValues(jVals []*v8.Value) {
 		jVal.Release()
 	}
 }
+func JsException(c *v8.Context, msg any) *v8.Value {
+	return c.Isolate().ThrowException(JsError(c, msg))
+}
+func JsError(c *v8.Context, msg any) *v8.Value {
+	message := msg.(string)
+	switch v := msg.(type) {
+	case string:
+		message = v
+		break
+	case error:
+		message = v.Error()
+		break
+	default:
+		jD, err := json.Marshal(msg)
+		if err != nil {
+			message = err.Error()
+		} else {
+			message = string(jD)
+		}
+	}
+	errObj, _ := c.Global().Get("Error")
+	iso := c.Isolate()
+	if errObj.IsFunction() {
+		fn, _ := errObj.AsFunction()
+		m, _ := v8.NewValue(iso, message)
+		v, _ := fn.Call(v8.Undefined(iso), m)
+		return v
+	}
+	tmpl := v8.NewObjectTemplate(iso)
+	inst, _ := tmpl.NewInstance(c)
+	inst.Set("exception", message)
+	return inst.Value
+}
 
 func (pro *PromiseT) String() string {
 	p, e := pro.v.AsPromise()
