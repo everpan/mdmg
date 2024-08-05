@@ -90,14 +90,14 @@ func baseURL(fb *fiber.Ctx, iso *v8.Isolate, typ int) *v8.FunctionTemplate {
 
 func ExportObject(fb *fiber.Ctx, iso *v8.Isolate) *v8.ObjectTemplate {
 	t := v8.NewObjectTemplate(iso)
-	t.Set("header", httpValue(fb, iso, OutHeader))
+	_ = t.Set("header", httpValue(fb, iso, OutHeader))
 	// t.Set("next", next(fb, iso))
-	t.Set("query", httpValue(fb, iso, OutQuery))
-	t.Set("param", httpValue(fb, iso, OutParam))
-	t.Set("baseURL", baseURL(fb, iso, OutBaseURL))
-	t.Set("originURL", baseURL(fb, iso, OutOriginURL))
+	_ = t.Set("query", httpValue(fb, iso, OutQuery))
+	_ = t.Set("param", httpValue(fb, iso, OutParam))
+	_ = t.Set("baseURL", baseURL(fb, iso, OutBaseURL))
+	_ = t.Set("originURL", baseURL(fb, iso, OutOriginURL))
 	//
 	jv, _ := v8.NewValue(iso, fb.BaseURL())
-	t.Set("baseURL2", jv)
+	_ = t.Set("baseURL2", jv)
 	return t
 }

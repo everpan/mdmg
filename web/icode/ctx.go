@@ -19,7 +19,7 @@ var pool = map[*fiber.Ctx]*Ctx{}
 func CreateV8Ctx(fb *fiber.Ctx) *v8.Context {
 	iso := v8.NewIsolate()
 	obj := v8.NewObjectTemplate(iso)
-	obj.Set("icode", ExportObject(fb, iso))
+	_ = obj.Set("icode", ExportObject(fb, iso))
 
 	v8ctx := v8.NewContext(iso, obj)
 	logger.Info("create v8 context", zap.Any("fbCtx", fb))
