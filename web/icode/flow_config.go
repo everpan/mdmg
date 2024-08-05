@@ -1,4 +1,4 @@
-package zcode
+package icode
 
 type FlowConfig struct {
 	Input  string `json:"input"`
