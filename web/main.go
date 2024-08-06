@@ -16,6 +16,7 @@ var logger *zap.Logger
 func main() {
 	icode.InitLogger()
 	defer logger.Sync()
+	defer icode.DisposeCtxPool()
 
 	app := fiber.New()
 	apiRouter := app.Group("/api")
@@ -30,11 +31,11 @@ func main() {
 			return c.SendString(e.Error())
 		}
 		scriptFile = filepath.Base(scriptFile)
-		r, e := zCtx.V8Ctx.RunScript(string(script), scriptFile)
+		r, e := zCtx.RunScript(string(script), scriptFile)
 		if e != nil {
 			return c.SendString(e.Error())
 		}
-		v, e := utils.ToGoValue(zCtx.V8Ctx, r)
+		v, e := utils.ToGoValue(zCtx.V8Context(), r)
 		if e != nil {
 			return c.SendString(e.Error())
 		}
@@ -46,4 +47,5 @@ func main() {
 		return c.Send(jv)
 	})
 	app.Listen(":9091")
+
 }
