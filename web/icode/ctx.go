@@ -11,7 +11,7 @@ import (
 type Ctx struct {
 	fbCtx *fiber.Ctx
 	v8Ctx *v8.Context
-	orm   *xorm.Engine
+	db    *xorm.Engine
 }
 
 // 每个`fiber.Ctx`对应一个
@@ -20,8 +20,9 @@ var pool = map[*fiber.Ctx]*Ctx{}
 func CreateV8Ctx(fb *fiber.Ctx) *v8.Context {
 	iso := v8.NewIsolate()
 	obj := v8.NewObjectTemplate(iso)
+	ctx := AcquireCtx(fb)
 	_ = obj.Set("icode", v8runtime.ExportObject(fb, iso))
-
+	_ = obj.Set("db", v8runtime.ExportXormObject(ctx, iso))
 	v8ctx := v8.NewContext(iso, obj)
 	logger.Info("create v8 context", zap.Any("fbCtx", fb))
 	return v8ctx
@@ -54,7 +55,7 @@ func (fc *Ctx) Dispose() {
 	}
 	fc.fbCtx = nil
 	fc.v8Ctx = nil
-	fc.orm = nil
+	fc.db = nil
 }
 
 func (fc *Ctx) SetFiberCtx(ctx *fiber.Ctx) {
@@ -63,6 +64,10 @@ func (fc *Ctx) SetFiberCtx(ctx *fiber.Ctx) {
 
 func (fc *Ctx) GetFiberCtx() *fiber.Ctx {
 	return fc.fbCtx
+}
+
+func (fc *Ctx) GetEngine() *xorm.Engine {
+	return fc.db
 }
 
 func (fc *Ctx) RunScript(source string, origin string) (*v8.Value, error) {
