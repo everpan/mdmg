@@ -1,7 +1,8 @@
-package icode
+package v8runtime
 
 import (
 	"github.com/everpan/mdmg/utils"
+	"github.com/everpan/mdmg/web/icode"
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
 	"net/http/httptest"
@@ -10,7 +11,7 @@ import (
 )
 
 func init() {
-	InitLogger()
+	icode.InitLogger()
 }
 
 func TestExportObject(t *testing.T) {
@@ -19,9 +20,9 @@ func TestExportObject(t *testing.T) {
 		path   string
 		target string
 		script string
-		want   func(ctx *Ctx, value *v8.Value) bool
+		want   func(ctx *icode.Ctx, value *v8.Value) bool
 	}{
-		{"undefined", "", "/", "", func(ctx *Ctx, value *v8.Value) bool {
+		{"undefined", "", "/", "", func(ctx *icode.Ctx, value *v8.Value) bool {
 			// logger.Info("run", zap.Any("val", value))
 			return value.String() == "undefined"
 		}},
@@ -43,8 +44,8 @@ return {
 	base: icode.baseURL(),
 	originURL: icode.originURL()
 }
-})()`, func(ctx *Ctx, value *v8.Value) bool {
-				gv, _ := utils.ToGoValue(ctx.v8Ctx, value)
+})()`, func(ctx *icode.Ctx, value *v8.Value) bool {
+				gv, _ := utils.ToGoValue(ctx.V8Context(), value)
 				// logger.Info("run", zap.Any("val", gv), zap.String("type", reflect.TypeOf(gv).String()))
 				jv0 := gv.(map[string]interface{})
 				params := jv0["params"].(map[string]any)
@@ -57,12 +58,12 @@ return {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var ctx *Ctx
+			var ctx *icode.Ctx
 			app := fiber.New()
 			defer app.Shutdown()
-			defer DisposeCtxPool()
+			defer icode.DisposeCtxPool()
 			app.Get(tt.path, func(c *fiber.Ctx) error {
-				ctx = AcquireCtx(c)
+				ctx = icode.AcquireCtx(c)
 
 				val, err := ctx.RunScript(tt.script, "test.js")
 				assert.Nil(t, err)

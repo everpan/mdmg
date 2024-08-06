@@ -1,6 +1,7 @@
 package icode
 
 import (
+	"github.com/everpan/mdmg/web/icode/v8runtime"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 	v8 "rogchap.com/v8go"
@@ -19,7 +20,7 @@ var pool = map[*fiber.Ctx]*Ctx{}
 func CreateV8Ctx(fb *fiber.Ctx) *v8.Context {
 	iso := v8.NewIsolate()
 	obj := v8.NewObjectTemplate(iso)
-	_ = obj.Set("icode", ExportObject(fb, iso))
+	_ = obj.Set("icode", v8runtime.ExportObject(fb, iso))
 
 	v8ctx := v8.NewContext(iso, obj)
 	logger.Info("create v8 context", zap.Any("fbCtx", fb))

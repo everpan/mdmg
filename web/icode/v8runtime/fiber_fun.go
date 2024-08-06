@@ -1,4 +1,4 @@
-package icode
+package v8runtime
 
 import (
 	"github.com/everpan/mdmg/utils"
