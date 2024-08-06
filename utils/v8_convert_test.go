@@ -79,3 +79,23 @@ func compareMap(m1, m2 map[string]any) bool {
 	}
 	return true
 }
+
+func TestJsError(t *testing.T) {
+	tests := []struct {
+		name string
+		msg  string
+		want string
+	}{
+		{"empty", "", "Error"},
+		{"empty", "some msg", "Error: some msg"},
+	}
+	c := v8.NewContext()
+	defer c.Close()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := JsError(c, tt.msg); got.String() != tt.want {
+				t.Errorf("JsError() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
