@@ -24,8 +24,8 @@ func main() {
 		fmt.Printf("%v | %v | %v | %v\n", c.Params("module"), c.Params("version"), c.Params("jsFile"), c.Queries())
 		// c.Next()
 		scriptFile := "web/handler/test_001.mjs"
-		// zCtx := zcode.GetCtx(scriptFile, c)
-		zCtx := icode.GetCtx(c)
+		// zCtx := zcode.AcquireCtx(scriptFile, c)
+		zCtx := icode.AcquireCtx(c)
 		script, e := os.ReadFile(scriptFile)
 		if e != nil {
 			return c.SendString(e.Error())

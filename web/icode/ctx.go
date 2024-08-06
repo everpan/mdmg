@@ -33,7 +33,7 @@ func createCtx(fb *fiber.Ctx) *Ctx {
 	}
 }
 
-func GetCtx(fb *fiber.Ctx) *Ctx {
+func AcquireCtx(fb *fiber.Ctx) *Ctx {
 	ctx, ok := pool[fb]
 	if !ok {
 		ctx = createCtx(fb)
