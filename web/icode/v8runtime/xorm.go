@@ -10,6 +10,7 @@ func ExportXormObject(orm *xorm.Engine, iso *v8.Isolate) *v8.ObjectTemplate {
 	ormObj := v8.NewObjectTemplate(iso)
 	ormObj.Set("exec", execSql(orm, iso))
 	ormObj.Set("tranExec", transactionExec(orm, iso))
+	ormObj.Set("query", queryInterface(orm, iso))
 	// parent
 	obj := v8.NewObjectTemplate(iso)
 	obj.Set("sql", ormObj)
@@ -68,6 +69,23 @@ func transactionExec(orm *xorm.Engine, iso *v8.Isolate) *v8.FunctionTemplate {
 			return utils.JsError(ctx, "error commit transaction")
 		}
 		r, _ = v8.NewValue(iso, true)
+		return
+	})
+}
+func queryInterface(orm *xorm.Engine, iso *v8.Isolate) *v8.FunctionTemplate {
+	return v8.NewFunctionTemplate(iso, func(info *v8.FunctionCallbackInfo) (r *v8.Value) {
+		ctx := info.Context()
+		if len(info.Args()) < 1 {
+			return utils.JsException(ctx, "no sql found")
+		}
+		results, err := orm.QueryInterface(info.Args()[0].String())
+		if err != nil {
+			return utils.JsException(ctx, err.Error())
+		}
+		r, err = utils.ToJsValue(ctx, results)
+		if err != nil {
+			return utils.JsError(ctx, "error convert result to js value")
+		}
 		return
 	})
 }
