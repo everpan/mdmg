@@ -14,11 +14,11 @@ import (
 func icodeHandler(fc *fiber.Ctx) error {
 	root := "web/handler"
 	zCtx := v8runtime.AcquireCtx(fc)
-	modVer := fc.Params("modVer")
+	zCtx.ModuleVersion = fc.Params("modVer")
 	fName := fc.Params("jsFile")
-	scriptFile := filepath.Join(root, modVer, fName+".js")
+	scriptFile := filepath.Join(root, zCtx.ModuleVersion, fName+".js")
 
-	zCtx.Module, zCtx.Version = utils.SplitModuleVersion(fc.Params("modVer"))
+	// zCtx.Module, zCtx.Version = utils.SplitModuleVersion(fc.Params("modVer"))
 	script, e := os.ReadFile(scriptFile)
 	if e != nil {
 		return SendInternalServerError(fc, e)

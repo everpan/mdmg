@@ -8,11 +8,10 @@ import (
 )
 
 type Ctx struct {
-	fbCtx   *fiber.Ctx
-	v8Ctx   *v8.Context
-	db      *xorm.Engine
-	Module  string
-	Version string
+	fbCtx         *fiber.Ctx
+	v8Ctx         *v8.Context
+	db            *xorm.Engine
+	ModuleVersion string
 }
 
 // 每个`fiber.Ctx`对应一个
@@ -22,7 +21,7 @@ func CreateV8Ctx(ctx *Ctx) *v8.Context {
 	iso := v8.NewIsolate()
 	obj := v8.NewObjectTemplate(iso)
 	// ctx := AcquireCtx(fb)
-	_ = obj.Set("icode", ExportObject(ctx.fbCtx, iso))
+	_ = obj.Set("icode", ExportObject(ctx, iso))
 	_ = obj.Set("db", ExportXormObject(ctx, iso))
 	v8ctx := v8.NewContext(iso, obj)
 	// icode.logger.Info("create v8 context", zap.Any("fbCtx", fb))

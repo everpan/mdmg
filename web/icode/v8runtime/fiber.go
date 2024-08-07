@@ -88,7 +88,20 @@ func baseURL(fb *fiber.Ctx, iso *v8.Isolate, typ int) *v8.FunctionTemplate {
 	})
 }
 
-func ExportObject(fb *fiber.Ctx, iso *v8.Isolate) *v8.ObjectTemplate {
+func ModuleVersion(c *Ctx, iso *v8.Isolate, f int) *v8.FunctionTemplate {
+	return v8.NewFunctionTemplate(iso, func(info *v8.FunctionCallbackInfo) (t *v8.Value) {
+		m, v := utils.SplitModuleVersion(c.ModuleVersion)
+		if f == 0 {
+			t, _ = v8.NewValue(iso, m)
+		} else {
+			t, _ = v8.NewValue(iso, v)
+		}
+		return
+	})
+}
+
+func ExportObject(c *Ctx, iso *v8.Isolate) *v8.ObjectTemplate {
+	fb := c.fbCtx
 	t := v8.NewObjectTemplate(iso)
 	_ = t.Set("header", httpValue(fb, iso, OutHeader))
 	// t.Set("next", next(fb, iso))
@@ -96,6 +109,9 @@ func ExportObject(fb *fiber.Ctx, iso *v8.Isolate) *v8.ObjectTemplate {
 	_ = t.Set("param", httpValue(fb, iso, OutParam))
 	_ = t.Set("baseURL", baseURL(fb, iso, OutBaseURL))
 	_ = t.Set("originURL", baseURL(fb, iso, OutOriginURL))
+	// module() version() fetch module and version
+	_ = t.Set("module", ModuleVersion(c, iso, 0))
+	_ = t.Set("version", ModuleVersion(c, iso, 1))
 	//
 	jv, _ := v8.NewValue(iso, fb.BaseURL())
 	_ = t.Set("baseURL2", jv)
