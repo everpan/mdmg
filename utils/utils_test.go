@@ -12,6 +12,8 @@ func TestSplitModuleVersion(t *testing.T) {
 		{"none", "", "", ""},
 		{"echo", "echo", "echo", ""},
 		{"only module", "moduleName", "moduleName", ""},
+		{"only module", "moduleName-", "moduleName", ""},
+		{"only module", "moduleName-subject", "moduleName-subject", ""},
 		{"mod ver 1", "model-1.3", "model", "1.3"},
 		{"mod ver 2", "model-sub1-1.3.9", "model-sub1", "1.3.9"},
 		{"mod ver 3", "model-sub-1-1.3.9", "model-sub-1", "1.3.9"},
