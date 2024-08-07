@@ -1,6 +1,9 @@
-package main
+package handler
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"github.com/gofiber/fiber/v2"
+)
 
 type ICodeResponse struct {
 	Code    int    `json:"code"`
@@ -19,4 +22,19 @@ func (resp *ICodeResponse) Marshal() (data []byte) {
 
 func (resp *ICodeResponse) Unmarshal(data []byte) {
 	json.Unmarshal(data, resp)
+}
+
+type PathHandler struct {
+	Path    string
+	Handler func(ctx *fiber.Ctx) error
+}
+
+func SendInternalServerError(fc *fiber.Ctx, err error) error {
+	return SendError(fc, fiber.StatusInternalServerError, err)
+}
+
+func SendError(fc *fiber.Ctx, status int, e error) error {
+	fc.SendStatus(status)
+	resp := NewICodeResponse(-1, e.Error(), nil)
+	return fc.Send(resp.Marshal())
 }
