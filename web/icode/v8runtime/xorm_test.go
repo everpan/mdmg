@@ -13,27 +13,33 @@ import (
 	"xorm.io/xorm/log"
 )
 
-var eng *xorm.Engine
-var v8ctx *v8.Context
+var ctx = &Ctx{}
+var testDbFilename = "xorm_test.db"
 
-func init() {
-	fName := "xorm_test.db"
-	os.Remove(fName)
+func setup() {
+	os.Remove(testDbFilename)
 	var err error
-	eng, err = xorm.NewEngine("sqlite3", fName)
+	eng, err := xorm.NewEngine("sqlite3", testDbFilename)
 	eng.ShowSQL(true)
 	eng.Logger().SetLevel(log.LOG_DEBUG)
 	if err != nil {
 		panic(err)
 	}
 	// init v8ctx
-	ctx := &Ctx{db: eng}
+	// ctx := &Ctx{db: eng}
+	ctx.db = eng
 	iso := v8.NewIsolate()
 	obj := ExportXormObject(ctx, iso)
-	v8ctx = v8.NewContext(iso, obj)
+	ctx.v8Ctx = v8.NewContext(iso, obj)
 
 	buildTestData()
 }
+
+func teardown() {
+	ctx.db.Close()
+	ctx.v8Ctx.Close()
+}
+
 func buildTestData() {
 	t := time.Now()
 	type User struct {
@@ -48,11 +54,11 @@ func buildTestData() {
 		{0, "name2", 24, t.Add(2), t},
 		{0, "name3", 24, t.Add(2), t},
 	}
-	err := eng.CreateTables(user[0])
+	err := ctx.db.CreateTables(user[0])
 	if err != nil {
 		panic(err)
 	}
-	_, err = eng.Insert(user)
+	_, err = ctx.db.Insert(user)
 	if err != nil {
 		panic(err)
 	}
@@ -81,11 +87,11 @@ func TestQuery(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r, err := v8ctx.RunScript(fmt.Sprintf("query(\"%s\")", tt.sql), "xorm_test.js")
+			r, err := ctx.RunScript(fmt.Sprintf("query(\"%s\")", tt.sql), "xorm_test.js")
 			if err != nil {
 				t.Fatal(err)
 			}
-			g, _ := utils.ToGoValue(v8ctx, r)
+			g, _ := utils.ToGoValue(ctx.v8Ctx, r)
 			tt.want(t, r, g)
 		})
 	}
@@ -93,4 +99,13 @@ func TestQuery(t *testing.T) {
 
 func TestExecInsert(t *testing.T) {
 
+}
+
+func TestMain(m *testing.M) {
+	setup()
+	if m.Run() == 0 {
+		teardown()
+		os.Remove(testDbFilename)
+	}
+	teardown()
 }
