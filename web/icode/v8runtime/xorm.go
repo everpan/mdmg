@@ -10,7 +10,8 @@ import (
 func ExportXormObject(ctx *icode.Ctx, iso *v8.Isolate) *v8.ObjectTemplate {
 	obj := v8.NewObjectTemplate(iso)
 	_ = obj.Set("exec", execSql(ctx, iso))
-	_ = obj.Set("tranExec", transactionExec(ctx, iso))
+	_ = obj.Set("transaction_exec", transactionExec(ctx, iso))
+	_ = obj.Set("tExec", transactionExec(ctx, iso))
 	_ = obj.Set("query", queryInterface(ctx, iso))
 
 	return obj
