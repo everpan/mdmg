@@ -2,12 +2,11 @@ package v8runtime
 
 import (
 	"github.com/everpan/mdmg/utils"
-	"github.com/everpan/mdmg/web/icode"
 	v8 "rogchap.com/v8go"
 	"xorm.io/xorm"
 )
 
-func ExportXormObject(ctx *icode.Ctx, iso *v8.Isolate) *v8.ObjectTemplate {
+func ExportXormObject(ctx *Ctx, iso *v8.Isolate) *v8.ObjectTemplate {
 	obj := v8.NewObjectTemplate(iso)
 	_ = obj.Set("exec", execSql(ctx, iso))
 	_ = obj.Set("transaction_exec", transactionExec(ctx, iso))
@@ -17,13 +16,13 @@ func ExportXormObject(ctx *icode.Ctx, iso *v8.Isolate) *v8.ObjectTemplate {
 	return obj
 }
 
-func execSql(ctx *icode.Ctx, iso *v8.Isolate) *v8.FunctionTemplate {
+func execSql(ctx *Ctx, iso *v8.Isolate) *v8.FunctionTemplate {
 	return v8.NewFunctionTemplate(iso, func(info *v8.FunctionCallbackInfo) *v8.Value {
 		c := info.Context()
 		if len(info.Args()) < 0 {
 			return utils.JsException(c, "no sql found")
 		}
-		args := JsArgsToGoArgs(info, c)
+		args, _ := utils.ToGoValues(c, info.Args()[1:])
 		eng := ctx.GetEngine()
 		ret, err := eng.Exec(info.Args()[0].String(), args)
 		if err != nil {
@@ -41,22 +40,13 @@ func execSql(ctx *icode.Ctx, iso *v8.Isolate) *v8.FunctionTemplate {
 	})
 }
 
-func JsArgsToGoArgs(info *v8.FunctionCallbackInfo, ctx *v8.Context) []any {
-	var args []any
-	for _, arg := range info.Args()[1:] {
-		v, _ := utils.ToGoValue(ctx, arg)
-		args = append(args, v)
-	}
-	return args
-}
-
-func transactionExec(ctx *icode.Ctx, iso *v8.Isolate) *v8.FunctionTemplate {
+func transactionExec(ctx *Ctx, iso *v8.Isolate) *v8.FunctionTemplate {
 	return v8.NewFunctionTemplate(iso, func(info *v8.FunctionCallbackInfo) (r *v8.Value) {
 		c := info.Context()
 		if len(info.Args()) < 1 {
 			return utils.JsException(c, "no sql found")
 		}
-		args := JsArgsToGoArgs(info, c)
+		args, _ := utils.ToGoValues(c, info.Args()[1:])
 		eng := ctx.GetEngine()
 		sess := eng.NewSession()
 		defer func(sess *xorm.Session) {
@@ -76,7 +66,7 @@ func transactionExec(ctx *icode.Ctx, iso *v8.Isolate) *v8.FunctionTemplate {
 		return
 	})
 }
-func queryInterface(ctx *icode.Ctx, iso *v8.Isolate) *v8.FunctionTemplate {
+func queryInterface(ctx *Ctx, iso *v8.Isolate) *v8.FunctionTemplate {
 	return v8.NewFunctionTemplate(iso, func(info *v8.FunctionCallbackInfo) (r *v8.Value) {
 		c := info.Context()
 		if len(info.Args()) < 1 {

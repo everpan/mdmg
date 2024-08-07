@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/everpan/mdmg/utils"
 	"github.com/everpan/mdmg/web/icode"
+	"github.com/everpan/mdmg/web/icode/v8runtime"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 	"os"
@@ -16,7 +17,7 @@ var logger *zap.Logger
 func main() {
 	icode.InitLogger()
 	defer logger.Sync()
-	defer icode.DisposeCtxPool()
+	defer v8runtime.DisposeCtxPool()
 
 	app := fiber.New()
 	apiRouter := app.Group("/api")
@@ -25,7 +26,7 @@ func main() {
 		// c.Next()
 		scriptFile := "web/handler/test_001.mjs"
 		// zCtx := zcode.AcquireCtx(scriptFile, c)
-		zCtx := icode.AcquireCtx(c)
+		zCtx := v8runtime.AcquireCtx(c)
 		script, e := os.ReadFile(scriptFile)
 		if e != nil {
 			return c.SendString(e.Error())
