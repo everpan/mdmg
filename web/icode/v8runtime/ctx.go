@@ -1,6 +1,7 @@
 package v8runtime
 
 import (
+	"github.com/everpan/mdmg/utils"
 	"github.com/gofiber/fiber/v2"
 	v8 "rogchap.com/v8go"
 	"xorm.io/xorm"
@@ -39,9 +40,9 @@ func AcquireCtx(fb *fiber.Ctx) *Ctx {
 		ctx = createCtx(fb)
 		pool[fb] = ctx
 	}
-	//logger.Info("get ctx",
+	//logger.Info("get _ctx",
 	//	zap.Uintptr("fb", uintptr(unsafe.Pointer(fb))),
-	//	zap.Uintptr("ctx", uintptr(unsafe.Pointer(ctx))))
+	//	zap.Uintptr("_ctx", uintptr(unsafe.Pointer(_ctx))))
 	return ctx
 }
 
@@ -56,20 +57,29 @@ func (fc *Ctx) Dispose() {
 	fc.db = nil
 }
 
-func (fc *Ctx) SetFiberCtx(ctx *fiber.Ctx) {
-	fc.fbCtx = ctx
-}
-
-func (fc *Ctx) GetFiberCtx() *fiber.Ctx {
+func (fc *Ctx) FiberCtx() *fiber.Ctx {
 	return fc.fbCtx
 }
 
-func (fc *Ctx) GetEngine() *xorm.Engine {
+func (fc *Ctx) Engine() *xorm.Engine {
 	return fc.db
+}
+
+func (fc *Ctx) V8Ctx() *v8.Context {
+	return fc.v8Ctx
 }
 
 func (fc *Ctx) RunScript(source string, origin string) (*v8.Value, error) {
 	return fc.v8Ctx.RunScript(source, origin)
+}
+
+func (fc *Ctx) RunScriptRetAny(source string, origin string) (any, *v8.Value, error) {
+	v, err := fc.v8Ctx.RunScript(source, origin)
+	if err != nil {
+		return nil, nil, err
+	}
+	g, e := utils.ToGoValue(fc.v8Ctx, v)
+	return g, v, e
 }
 
 func (fc *Ctx) V8Context() *v8.Context {
