@@ -1,8 +1,23 @@
 /// iif
-(() => {
+((args) => {
+    let accept = icode.header().Accept
+
     return {
-        next: true, // flow next, default false
-        version: "0.1.1", // debug
-        output: {}
+        output: {
+            code: 0,
+            data: {
+                sql: "select * from user"
+            },
+            args
+            header: icode.header("content-type"),
+            headers: icode.header(),
+            query: icode.query('key'),
+            queries: icode.query(),
+            param: icode.param("module"),
+            params: icode.param(),
+            accept,
+            base: icode.baseURL(),
+            originURL: icode.originURL()
+        }
     }
 })()
