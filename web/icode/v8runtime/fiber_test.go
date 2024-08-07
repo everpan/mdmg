@@ -62,11 +62,10 @@ return {
 			// defer app.Shutdown()
 			// defer DisposeCtxPool()
 			app.Get(tt.path, func(c *fiber.Ctx) error {
-				t.Logf("fiber %v", c)
-				_ = AcquireCtx(c)
-				// val, err := ctx.RunScript(tt.script, "test.js")
-				//assert.Nil(t, err)
-				//assert.True(t, tt.want(ctx, val))
+				ctx := AcquireCtx(c)
+				val, err := ctx.RunScript(tt.script, "test.js")
+				assert.Nil(t, err)
+				assert.True(t, tt.want(ctx, val))
 				return nil
 			})
 			resp, err := app.Test(httptest.NewRequest(fiber.MethodGet, tt.target, nil), -1)

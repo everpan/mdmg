@@ -134,12 +134,12 @@ func TestExec(t *testing.T) {
 	}
 }
 
-//func TestMain(m *testing.M) {
-//	setup()
-//	if m.Run() == 0 {
-//		teardown()
-//		os.Remove(testDbFilename)
-//	} else {
-//		teardown()
-//	}
-//}
+func TestMain(m *testing.M) {
+	setup()
+	if m.Run() == 0 {
+		teardown()
+		os.Remove(testDbFilename)
+	} else {
+		teardown()
+	}
+}
