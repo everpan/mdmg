@@ -1,14 +1,15 @@
-/// iif
-((args) => {
-    let accept = icode.header().Accept
+/// iife
 
+var accept = icode.header().Accept
+console.log(accept)
+get = () => {
     return {
         output: {
             code: 0,
             data: {
                 sql: "select * from user"
             },
-            args
+            method: "get",
             header: icode.header("content-type"),
             headers: icode.header(),
             query: icode.query('key'),
@@ -20,4 +21,34 @@
             originURL: icode.originURL()
         }
     }
-})()
+}
+
+post = () => {
+    return {
+        method: "post",
+        output: {
+            accept,
+        }
+    }
+}
+
+del = () => {
+    return {
+        method: "del",
+        output: {
+            accept,
+            headers: icode.header(),
+            data: "some data",
+            "content-type": icode.header("content-type"),
+        }
+    }
+}
+// iife
+(() => {
+        return {
+            get,
+            post,
+            del,
+        }
+    }
+)();
