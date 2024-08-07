@@ -27,7 +27,7 @@ func getAllValues(info *v8.FunctionCallbackInfo, typ int, fb *fiber.Ctx) *v8.Val
 	var rv *v8.Value
 	var err error
 	if OutHeader == typ {
-		hs := fb.GetRespHeaders()
+		hs := fb.GetReqHeaders()
 		rv, err = utils.ToJsValue(info.Context(), hs)
 	} else if OutParam == typ {
 		mm := fb.AllParams()
