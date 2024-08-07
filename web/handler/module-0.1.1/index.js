@@ -1,6 +1,6 @@
 /// iife
 
-var accept = icode.header().Accept
+var accept = icode.header().Accept // 这里可以使用var定义全局变量，不能使用let定义
 console.log(accept)
 get = () => {
     return {
