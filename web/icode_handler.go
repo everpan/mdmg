@@ -24,11 +24,12 @@ func icodeHandler(fc *fiber.Ctx) error {
 		return SendInternalServerError(fc, e)
 	}
 	scriptFile = filepath.Base(scriptFile)
-	r, e := zCtx.RunScript(string(script), scriptFile)
+	r1, e := zCtx.RunScript(string(script), scriptFile)
+	defer r1.Release()
 	if e != nil {
 		return SendInternalServerError(fc, e)
 	}
-	scriptObj, e := r.AsObject()
+	scriptObj, e := r1.AsObject()
 	if e != nil {
 		return SendInternalServerError(fc, e)
 	}
@@ -44,11 +45,12 @@ func icodeHandler(fc *fiber.Ctx) error {
 	if e != nil {
 		return SendInternalServerError(fc, e)
 	}
-	r, e = methodFun.Call(zCtx.V8Context().Global())
+	r2, e := methodFun.Call(zCtx.V8Context().Global())
+	defer r2.Release()
 	if e != nil {
 		return SendInternalServerError(fc, e)
 	}
-	v, e := utils.ToGoValue(zCtx.V8Context(), r)
+	v, e := utils.ToGoValue(zCtx.V8Context(), r2)
 	if e != nil {
 		return SendInternalServerError(fc, e)
 	}
