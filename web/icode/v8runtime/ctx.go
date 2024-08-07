@@ -8,9 +8,11 @@ import (
 )
 
 type Ctx struct {
-	fbCtx *fiber.Ctx
-	v8Ctx *v8.Context
-	db    *xorm.Engine
+	fbCtx   *fiber.Ctx
+	v8Ctx   *v8.Context
+	db      *xorm.Engine
+	Module  string
+	Version string
 }
 
 // 每个`fiber.Ctx`对应一个
