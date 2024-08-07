@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"github.com/everpan/mdmg/utils"
+	"github.com/everpan/mdmg/web/config"
 	"github.com/everpan/mdmg/web/icode/v8runtime"
 	"github.com/gofiber/fiber/v2"
 	"os"
@@ -13,11 +14,10 @@ import (
 var ICoderHandler = PathHandler{
 	Path: "/v1/icode/:modVer/:jsFile/*",
 	Handler: func(fc *fiber.Ctx) error {
-		root := "web/Handler"
 		zCtx := v8runtime.AcquireCtx(fc)
 		zCtx.ModuleVersion = fc.Params("modVer")
 		fName := fc.Params("jsFile")
-		scriptFile := filepath.Join(root, zCtx.ModuleVersion, fName+".js")
+		scriptFile := filepath.Join(config.DefaultConfig.JSModuleRootPath, zCtx.ModuleVersion, fName+".js")
 
 		// zCtx.Module, zCtx.Version = utils.SplitModuleVersion(fc.Params("modVer"))
 		script, e := os.ReadFile(scriptFile)
