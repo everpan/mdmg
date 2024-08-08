@@ -20,5 +20,5 @@ func main() {
 
 	apiRouter := app.Group("/api")
 	apiRouter.Group(handler.ICoderHandler.Path, handler.ICoderHandler.Handler)
-	app.Listen(":9091")
+	_ = app.Listen(":9091")
 }

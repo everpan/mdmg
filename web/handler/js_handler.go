@@ -6,11 +6,12 @@ import (
 	"github.com/everpan/mdmg/v8runtime"
 	"github.com/everpan/mdmg/web/config"
 	"github.com/gofiber/fiber/v2"
-	"os"
 	"path/filepath"
 	v8 "rogchap.com/v8go"
 	"strings"
 )
+
+var ICodeHandlerRunScript RunScript = &runFileScript{}
 
 func icodeHandler(fc *fiber.Ctx) error {
 	zCtx := v8runtime.AcquireCtx(fc)
@@ -19,7 +20,7 @@ func icodeHandler(fc *fiber.Ctx) error {
 	scriptFile := filepath.Join(config.DefaultConfig.JSModuleRootPath, zCtx.ModuleVersion, fName+".js")
 	var err error
 	var r1, r2 *v8.Value
-	r1, err = runFileScript(zCtx, scriptFile)
+	r1, err = ICodeHandlerRunScript.RunScript(zCtx, scriptFile)
 	if err == nil {
 		defer r1.Release()
 		r2, err = runMethodScript(fc.Method(), r1, zCtx.V8Ctx())
@@ -60,13 +61,4 @@ func runMethodScript(method string, script *v8.Value, ctx *v8.Context) (*v8.Valu
 		return nil, e
 	}
 	return methodFun.Call(ctx.Global())
-}
-
-func runFileScript(zCtx *v8runtime.Ctx, scriptFile string) (*v8.Value, error) {
-	script, err := os.ReadFile(scriptFile)
-	if err != nil {
-		return nil, err
-	}
-	scriptFile = filepath.Base(scriptFile)
-	return zCtx.RunScript(string(script), scriptFile)
 }
