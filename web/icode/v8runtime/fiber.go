@@ -33,7 +33,7 @@ func getAllValues(info *v8.FunctionCallbackInfo, typ int, fb *fiber.Ctx) *v8.Val
 		mm := fb.AllParams()
 		rv, err = utils.ToJsValue(info.Context(), mm)
 	} else if OutQuery == typ {
-		mm := fb.GetReqHeaders()
+		mm := fb.Queries()
 		rv, err = utils.ToJsValue(info.Context(), mm)
 	}
 	if err != nil {
