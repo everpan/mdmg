@@ -5,5 +5,5 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
-	JSModuleRootPath: "./web/script_module",
+	JSModuleRootPath: "web/script_module",
 }
