@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"os"
 	"path/filepath"
+	v8 "rogchap.com/v8go"
 	"strings"
 )
 
@@ -18,47 +19,57 @@ var ICoderHandler = PathHandler{
 		zCtx.ModuleVersion = fc.Params("modVer")
 		fName := fc.Params("jsFile")
 		scriptFile := filepath.Join(config.DefaultConfig.JSModuleRootPath, zCtx.ModuleVersion, fName+".js")
-
-		// zCtx.Module, zCtx.Version = utils.SplitModuleVersion(fc.Params("modVer"))
-		script, e := os.ReadFile(scriptFile)
-		if e != nil {
-			return SendInternalServerError(fc, e)
+		var err error
+		var r1, r2 *v8.Value
+		r1, err = runFileScript(zCtx, scriptFile)
+		if err == nil {
+			defer r1.Release()
+			r2, err = runMethodScript(fc.Method(), r1, zCtx.V8Ctx())
+			if err == nil {
+				defer r2.Release()
+				var gv any
+				gv, err = utils.ToGoValue(zCtx.V8Context(), r2)
+				if err == nil {
+					var jv []byte
+					jv, err = json.Marshal(gv)
+					if err != nil {
+						return fc.Send(jv)
+					}
+				}
+			}
 		}
-		scriptFile = filepath.Base(scriptFile)
-		r1, e := zCtx.RunScript(string(script), scriptFile)
-		defer r1.Release()
-		if e != nil {
-			return SendInternalServerError(fc, e)
+		if err != nil {
+			return SendInternalServerError(fc, err)
 		}
-		scriptObj, e := r1.AsObject()
-		if e != nil {
-			return SendInternalServerError(fc, e)
-		}
-		method := strings.ToLower(fc.Method())
-		if method == "delete" {
-			method = "del"
-		}
-		methodVal, e := scriptObj.Get(method)
-		if e != nil {
-			return SendInternalServerError(fc, e)
-		}
-		methodFun, e := methodVal.AsFunction()
-		if e != nil {
-			return SendInternalServerError(fc, e)
-		}
-		r2, e := methodFun.Call(zCtx.V8Context().Global())
-		defer r2.Release()
-		if e != nil {
-			return SendInternalServerError(fc, e)
-		}
-		v, e := utils.ToGoValue(zCtx.V8Context(), r2)
-		if e != nil {
-			return SendInternalServerError(fc, e)
-		}
-		jv, e := json.Marshal(v)
-		if e != nil {
-			return SendInternalServerError(fc, e)
-		}
-		return fc.Send(jv)
+		return nil
 	},
+}
+
+func runMethodScript(method string, script *v8.Value, ctx *v8.Context) (*v8.Value, error) {
+	m := strings.ToLower(method)
+	if method == "delete" {
+		method = "del"
+	}
+	scriptObj, e := script.AsObject()
+	if e != nil {
+		return nil, e
+	}
+	methodVal, e := scriptObj.Get(m)
+	if e != nil {
+		return nil, e
+	}
+	methodFun, e := methodVal.AsFunction()
+	if e != nil {
+		return nil, e
+	}
+	return methodFun.Call(ctx.Global())
+}
+
+func runFileScript(zCtx *v8runtime.Ctx, scriptFile string) (*v8.Value, error) {
+	script, err := os.ReadFile(scriptFile)
+	if err != nil {
+		return nil, err
+	}
+	scriptFile = filepath.Base(scriptFile)
+	return zCtx.RunScript(string(script), scriptFile)
 }
