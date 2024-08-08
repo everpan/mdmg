@@ -11,6 +11,11 @@ type ICodeResponse struct {
 	Data    any    `json:"data,omitempty"`
 }
 
+type PathHandler struct {
+	Path    string
+	Handler fiber.Handler
+}
+
 func NewICodeResponse(code int, message string, data interface{}) *ICodeResponse {
 	return &ICodeResponse{Code: code, Message: message, Data: data}
 }
@@ -22,11 +27,6 @@ func (resp *ICodeResponse) Marshal() (data []byte) {
 
 func (resp *ICodeResponse) Unmarshal(data []byte) {
 	json.Unmarshal(data, resp)
-}
-
-type PathHandler struct {
-	Path    string
-	Handler func(ctx *fiber.Ctx) error
 }
 
 func SendInternalServerError(fc *fiber.Ctx, err error) error {
