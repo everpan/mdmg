@@ -3,8 +3,8 @@ package handler
 import (
 	"encoding/json"
 	"github.com/everpan/mdmg/utils"
+	"github.com/everpan/mdmg/v8runtime"
 	"github.com/everpan/mdmg/web/config"
-	"github.com/everpan/mdmg/web/icode/v8runtime"
 	"github.com/gofiber/fiber/v2"
 	"os"
 	"path/filepath"

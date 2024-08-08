@@ -2,7 +2,7 @@ package v8runtime
 
 import (
 	"github.com/everpan/mdmg/utils"
-	"github.com/everpan/mdmg/web/icode"
+	"github.com/everpan/mdmg/web/zlog"
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
 	"net/http/httptest"
@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	icode.InitLogger()
+	zlog.InitLogger()
 }
 
 func TestExportObject(t *testing.T) {

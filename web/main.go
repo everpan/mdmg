@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/everpan/mdmg/v8runtime"
 	"github.com/everpan/mdmg/web/handler"
-	"github.com/everpan/mdmg/web/icode/v8runtime"
 	"github.com/everpan/mdmg/web/zlog"
 	"github.com/gofiber/fiber/v2"
 )
