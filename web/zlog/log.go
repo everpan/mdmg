@@ -1,4 +1,4 @@
-package web_logger
+package zlog
 
 import "go.uber.org/zap"
 
