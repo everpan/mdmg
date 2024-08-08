@@ -2,17 +2,14 @@ package main
 
 import (
 	"github.com/everpan/mdmg/web/handler"
-	"github.com/everpan/mdmg/web/icode"
 	"github.com/everpan/mdmg/web/icode/v8runtime"
+	"github.com/everpan/mdmg/web/web_logger"
 	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
 )
 
-var logger *zap.Logger
-
 func main() {
-	icode.InitLogger()
-	defer logger.Sync()
+	web_logger.InitLogger()
+	defer web_logger.Sync()
 	defer v8runtime.DisposeCtxPool()
 
 	app := fiber.New()
