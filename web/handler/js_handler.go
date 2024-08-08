@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-func iCoderHandler(fc *fiber.Ctx) error {
+func icodeHandler(fc *fiber.Ctx) error {
 	zCtx := v8runtime.AcquireCtx(fc)
 	zCtx.ModuleVersion = fc.Params("modVer")
 	fName := fc.Params("jsFile")
