@@ -7,6 +7,7 @@ import (
 	"github.com/everpan/mdmg/v8runtime"
 	"github.com/everpan/mdmg/web/config"
 	"github.com/gofiber/fiber/v2"
+	"io/fs"
 	"os"
 	"path/filepath"
 	v8 "rogchap.com/v8go"
@@ -67,8 +68,12 @@ func icodeHandler(fc *fiber.Ctx) error {
 		}
 	}
 	if err != nil {
-		fc.Response().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-		return SendInternalServerError(fc, err)
+		if errors.Is(err, fs.ErrNotExist) {
+			err = errors.New(fmt.Sprintf("can not find %v", shortFileName))
+			SendError(fc, fiber.StatusNotFound, err)
+		} else {
+			return SendInternalServerError(fc, err)
+		}
 	}
 	return nil
 }

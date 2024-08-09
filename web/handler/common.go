@@ -30,6 +30,7 @@ func (resp *ICodeResponse) Unmarshal(data []byte) {
 }
 
 func SendInternalServerError(fc *fiber.Ctx, err error) error {
+	fc.Response().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 	return SendError(fc, fiber.StatusInternalServerError, err)
 }
 

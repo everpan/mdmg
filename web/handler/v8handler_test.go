@@ -33,11 +33,11 @@ var contains = func(code int, msg string) checkFun {
 }
 
 var fileNotExist = func(t *testing.T, r *http.Response, e error) {
-	assert.Equal(t, http.StatusInternalServerError, r.StatusCode)
+	assert.Equal(t, http.StatusNotFound, r.StatusCode)
 	body, _ := io.ReadAll(r.Body)
 	str := string(body)
-	assert.Contains(t, str, "open")
-	assert.Contains(t, str, "no such file or directory")
+	assert.Contains(t, str, "can not find ")
+	assert.Contains(t, str, ".js")
 }
 
 var wantInternalServerError = func(msg string) func(*testing.T, *http.Response, error) {
