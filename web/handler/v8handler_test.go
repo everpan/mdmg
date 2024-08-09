@@ -82,7 +82,6 @@ func TestIcodeHandler(t *testing.T) {
 	// Path:    "/v1/icode/:modVer/:jsFile/*",
 	app.Group(ICoderHandler.Path, ICoderHandler.Handler)
 	config.DefaultConfig.JSModuleRootPath = "../script_module"
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			target := "/v1/icode/test-0.1.0/" + strings.TrimSpace(tt.scriptFileName)

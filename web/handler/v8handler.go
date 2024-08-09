@@ -14,15 +14,6 @@ import (
 	"strings"
 )
 
-func runScriptByFileShortName(ctx *v8runtime.Ctx, shortFileName string) (*v8.Value, error) {
-	scriptFile := filepath.Join(config.DefaultConfig.JSModuleRootPath, shortFileName)
-	scriptContext, err := os.ReadFile(scriptFile)
-	if err != nil {
-		return nil, err
-	}
-	return ctx.RunScript(string(scriptContext), shortFileName)
-}
-
 func icodeHandler(fc *fiber.Ctx) error {
 	zCtx := v8runtime.AcquireCtx(fc)
 	zCtx.ModuleVersion = fc.Params("modVer")
@@ -30,11 +21,11 @@ func icodeHandler(fc *fiber.Ctx) error {
 	subFile := fc.Params("*1")
 	var shortFileName string
 	if len(subFile) == 0 {
-		shortFileName = filepath.Join(zCtx.ModuleVersion, fName+".js")
+		shortFileName = filepath.Join(zCtx.ModuleVersion, config.DefaultConfig.JSModuleBeckEndDir, fName+".js")
 	} else {
 		subs := strings.Split(subFile, "/")
 		substr := filepath.Join(subs...)
-		shortFileName = filepath.Join(zCtx.ModuleVersion, fName, substr+".js")
+		shortFileName = filepath.Join(zCtx.ModuleVersion, config.DefaultConfig.JSModuleBeckEndDir, fName, substr+".js")
 	}
 	var err error
 	var r1, r2, output *v8.Value
@@ -76,6 +67,15 @@ func icodeHandler(fc *fiber.Ctx) error {
 		}
 	}
 	return nil
+}
+
+func runScriptByFileShortName(ctx *v8runtime.Ctx, shortFileName string) (*v8.Value, error) {
+	scriptFile := filepath.Join(config.DefaultConfig.JSModuleRootPath, shortFileName)
+	scriptContext, err := os.ReadFile(scriptFile)
+	if err != nil {
+		return nil, err
+	}
+	return ctx.RunScript(string(scriptContext), shortFileName)
 }
 
 func runMethodScript(method string, script *v8.Value, ctx *v8.Context) (*v8.Value, error) {
