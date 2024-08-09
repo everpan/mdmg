@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -75,6 +75,8 @@ func TestIcodeHandler(t *testing.T) {
 			contains(-1, "output object is not found in response")},
 		{"method not found", fiber.MethodPut, "output",
 			contains(-1, "not found the handler of method(PUT)")},
+		{"dir1/dir2/dir3", fiber.MethodPut, "sub1/sub2/output",
+			contains(-1, "/sub1/sub2/output.js")},
 	}
 	app := fiber.New()
 	// Path:    "/v1/icode/:modVer/:jsFile/*",
@@ -83,7 +85,7 @@ func TestIcodeHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			target := filepath.Join("/v1/icode/test-0.1.0/", tt.scriptFileName)
+			target := "/v1/icode/test-0.1.0/" + strings.TrimSpace(tt.scriptFileName)
 			req := httptest.NewRequest(tt.method, target, nil)
 			req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 			resp, err := app.Test(req)

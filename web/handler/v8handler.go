@@ -26,7 +26,16 @@ func icodeHandler(fc *fiber.Ctx) error {
 	zCtx := v8runtime.AcquireCtx(fc)
 	zCtx.ModuleVersion = fc.Params("modVer")
 	fName := fc.Params("jsFile")
-	shortFileName := filepath.Join(zCtx.ModuleVersion, fName+".js")
+	subFile := fc.Params("*1")
+	var shortFileName string
+	if len(subFile) == 0 {
+		shortFileName = filepath.Join(zCtx.ModuleVersion, fName+".js")
+	} else {
+		subs := strings.Split(subFile, "/")
+		substr := filepath.Join(subs...)
+		shortFileName = filepath.Join(zCtx.ModuleVersion, fName, substr+".js")
+	}
+
 	var err error
 	var r1, r2, output *v8.Value
 	r1, err = runScriptByFileShortName(zCtx, shortFileName)
