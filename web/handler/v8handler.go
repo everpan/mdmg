@@ -35,7 +35,6 @@ func icodeHandler(fc *fiber.Ctx) error {
 		substr := filepath.Join(subs...)
 		shortFileName = filepath.Join(zCtx.ModuleVersion, fName, substr+".js")
 	}
-
 	var err error
 	var r1, r2, output *v8.Value
 	r1, err = runScriptByFileShortName(zCtx, shortFileName)
@@ -59,6 +58,7 @@ func icodeHandler(fc *fiber.Ctx) error {
 								Code: 0,
 								Data: gv,
 							}
+							fc.Response().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 							return fc.Send(resp.Marshal())
 						}
 					}
@@ -67,6 +67,7 @@ func icodeHandler(fc *fiber.Ctx) error {
 		}
 	}
 	if err != nil {
+		fc.Response().Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 		return SendInternalServerError(fc, err)
 	}
 	return nil
