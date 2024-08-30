@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/everpan/mdmg/v8runtime"
 	"github.com/everpan/mdmg/web/handler"
+	"github.com/gofiber/contrib/fgprof"
 	"github.com/gofiber/contrib/fiberzap/v2"
 	"github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
@@ -21,6 +22,8 @@ func main() {
 
 	swgCfg := swagger.Config{FilePath: "./docs/swagger.json", Path: "./swagger"}
 	app.Use(swagger.New(swgCfg))
+
+	app.Use(fgprof.New())
 
 	apiRouter := app.Group("/api")
 	apiRouter.Group(handler.ICoderHandler.Path, handler.ICoderHandler.Handler)
