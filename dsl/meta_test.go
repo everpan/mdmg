@@ -37,7 +37,7 @@ func TestReadMetaJson(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		var meta = ModelMeta{}
+		var meta = Meta{}
 		err = json.Unmarshal(fdata, &meta)
 		if err != nil {
 			t.Fatal(err)
@@ -55,7 +55,7 @@ func TestCreateTableFromMeta(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	meta := ModelMeta{}
+	meta := Meta{}
 	err = json.Unmarshal(mData, &meta)
 	if err != nil {
 		t.Fatal(err)
@@ -118,7 +118,7 @@ func TestColumnsConvertDslToXorm(t *testing.T) {
 	fatalErr(t, err)
 	for _, td := range tData {
 		t.Run(td.name, func(t *testing.T) {
-			meta := ModelMeta{} //.Columns
+			meta := Meta{} //.Columns
 			fileName := fmt.Sprintf("%s/%s", basePath, td.fileName)
 			fData, err := os.ReadFile(fileName)
 			fatalErr(t, err)

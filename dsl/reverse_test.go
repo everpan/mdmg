@@ -23,7 +23,7 @@ func TestTableToJson(t *testing.T) {
 	// var colMapper = utils.GetMapperByName("snake")
 
 	for _, table := range tables[0:3] {
-		meta := ModelMeta{}
+		meta := Meta{}
 		meta.FromSchemaTable(table)
 		mJson, err := meta.Json(true)
 		fatalErr(t, err)

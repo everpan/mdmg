@@ -65,6 +65,7 @@ func (c *Column) ConvertXormColumn(db *core.DB) *schemas.Column {
 	return col
 }
 
+// ID,ID32,ID64 为特殊tag，todo 反向转换
 func (c *Column) parseIDAssignXormColumn(col *schemas.Column) {
 	// ID -> bigint unsigned not null primary key auto_increment
 	// ID32 -> int unsigned not null primary key auto_increment
@@ -82,12 +83,12 @@ func (c *Column) parseIDAssignXormColumn(col *schemas.Column) {
 	}
 }
 
-type ModelMeta struct {
+type Meta struct {
 	Table   Table     `json:"table"`
 	Columns []*Column `json:"columns"`
 }
 
-func (meta *ModelMeta) CreateTableSchema(db *core.DB, dialect dialects.Dialect) *schemas.Table {
+func (meta *Meta) CreateTableSchema(db *core.DB, dialect dialects.Dialect) *schemas.Table {
 	table := schemas.NewEmptyTable()
 	table.Name = db.Mapper.Obj2Table(meta.Table.Name)
 	table.Comment = meta.Table.Comment
@@ -102,13 +103,13 @@ func (meta *ModelMeta) CreateTableSchema(db *core.DB, dialect dialects.Dialect) 
 	return table
 }
 
-func (meta *ModelMeta) CreateTableSQL(db *core.DB, dialect dialects.Dialect) (sqlStr string, err error) {
+func (meta *Meta) CreateTableSQL(db *core.DB, dialect dialects.Dialect) (sqlStr string, err error) {
 	table := meta.CreateTableSchema(db, dialect)
 	sqlStr, _, err = dialect.CreateTableSQL(context.Background(), db, table, "")
 	return
 }
 
-func (meta *ModelMeta) CreateTable(eng *xorm.Engine) error {
+func (meta *Meta) CreateTable(eng *xorm.Engine) error {
 	sqlStr, err := meta.CreateTableSQL(eng.DB(), eng.Dialect())
 	if err != nil {
 		return err
@@ -117,7 +118,7 @@ func (meta *ModelMeta) CreateTable(eng *xorm.Engine) error {
 	return err
 }
 
-func (meta *ModelMeta) FromSchemaTable(t *schemas.Table) {
+func (meta *Meta) FromSchemaTable(t *schemas.Table) {
 	meta.Table.Name = t.Name
 	meta.Table.Comment = t.Comment
 	meta.Table.Charset = t.Charset
@@ -130,7 +131,8 @@ func (meta *ModelMeta) FromSchemaTable(t *schemas.Table) {
 	}
 }
 
-func (meta *ModelMeta) Json(indent bool) (string, error) {
+// Json  化整个meta
+func (meta *Meta) Json(indent bool) (string, error) {
 	var (
 		d   []byte
 		err error

@@ -8,11 +8,10 @@ import (
 	"github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
+	"time"
 )
 
-func main() {
-	defer v8runtime.DisposeCtxPool()
-
+func CreateApp() *fiber.App {
 	app := fiber.New()
 	// contrib/fiberzap
 	logger, _ := zap.NewDevelopment()
@@ -27,5 +26,23 @@ func main() {
 
 	apiRouter := app.Group("/api")
 	apiRouter.Group(handler.ICoderHandler.Path, handler.ICoderHandler.Handler)
-	_ = app.Listen(":9091")
+
+	staticConf := fiber.Static{
+		Compress:      true,
+		ByteRange:     true,
+		Browse:        true,
+		Index:         "index.html",
+		CacheDuration: 10 * time.Second,
+		MaxAge:        3600,
+	}
+
+	app.Static("/", "./public", staticConf)
+	return app
+}
+
+func main() {
+	defer v8runtime.DisposeCtxPool()
+
+	app := CreateApp()
+	app.Listen(":8080")
 }
