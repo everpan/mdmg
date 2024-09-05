@@ -61,7 +61,8 @@ func CreateApp() *fiber.App {
 		MaxAge:        3600,
 	}
 
-	app.Static("/", "./public", staticConf)
+	app.Static(viper.GetString("static.path"),
+		viper.GetString("static.root"), staticConf)
 	return app
 }
 
