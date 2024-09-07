@@ -7,9 +7,10 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// icEv = icode event
 const (
-	ICodeEventAutoIncKey = "ic_event_inc_key"
-	ICodeEventPrefix     = "ic_event_"
+	ICodeEventAutoIncKey = "icEv_inc_key"
+	ICodeEventPrefix     = "icEv_"
 )
 
 type RedisEvent struct {
