@@ -46,7 +46,7 @@ func AddFetch(t *testing.T, inst IEvent) {
 
 	for i, d := range data {
 		t.Run(fmt.Sprintf("%s Record %d", inst.Driver(), i), func(t *testing.T) {
-			inst.Add(d.ev)
+			_ = inst.Add(d.ev)
 			self := inst.Fetch(d.ev.EventId)
 			if nil == self {
 				assert.FailNowf(t, "fetch event return nil", "event : %v", d.ev)
@@ -54,8 +54,8 @@ func AddFetch(t *testing.T, inst IEvent) {
 			// 并行情况下,equal 不稳定 改为判断 > 0
 			assert.Greater(t, d.ev.EventId, uint64(0))
 			assert.Equal(t, d.ev.EventId, self.EventId)
-			max := inst.MaxId()
-			assert.GreaterOrEqual(t, max, d.ev.EventId)
+			m := inst.MaxId()
+			assert.GreaterOrEqual(t, m, d.ev.EventId)
 		})
 	}
 
