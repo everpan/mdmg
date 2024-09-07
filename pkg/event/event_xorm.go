@@ -45,8 +45,8 @@ func (x *XORM) Add(e *Event) error {
 	return nil
 }
 
-func (x *XORM) Fetch(pk uint64) *Event {
-	e := &Event{EventId: pk}
+func (x *XORM) Fetch(eventId uint64) *Event {
+	e := &Event{EventId: eventId}
 	b, err := x.engine.Table(EventTable).Get(e)
 	if nil != err {
 		x.engine.Logger().Errorf("Fetch event: %v fail : %v", e, err)
@@ -58,7 +58,7 @@ func (x *XORM) Fetch(pk uint64) *Event {
 	return nil
 }
 
-func (x *XORM) FetchGte(pk uint64, limit int32) []*Event {
+func (x *XORM) FetchGte(eventId uint64, limit int32) []*Event {
 	if int32(0) == limit {
 		limit = 20
 	}

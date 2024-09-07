@@ -26,6 +26,6 @@ type Snapshot struct {
 
 type IEvent interface {
 	Add(e *Event) error
-	Fetch(pk uint64) *Event
-	FetchGte(pk uint64, limit int32) []*Event
+	Fetch(eventId uint64) *Event
+	FetchGte(eventId uint64, limit int32) []*Event
 }
