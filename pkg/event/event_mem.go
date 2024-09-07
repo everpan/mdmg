@@ -4,50 +4,56 @@ import (
 	"sync"
 )
 
-type EventMem struct {
+type Mem struct {
 	maxId  uint64
 	events map[uint64]*Event
 	mux    *sync.RWMutex
 }
 
-func (em *EventMem) Init() {
-	em.maxId = 0
-	em.events = make(map[uint64]*Event)
-	em.mux = new(sync.RWMutex)
+func NewMem() *Mem {
+	m := &Mem{}
+	m.setup()
+	return m
 }
 
-func (em *EventMem) MaxId() uint64 {
-	return em.maxId
+func (m *Mem) setup() {
+	m.maxId = 0
+	m.events = make(map[uint64]*Event)
+	m.mux = new(sync.RWMutex)
 }
 
-func (em *EventMem) NextId() uint64 {
-	em.mux.Lock()
-	defer em.mux.Unlock()
-	em.maxId += 1
-	return em.maxId
+func (m *Mem) MaxId() uint64 {
+	return m.maxId
 }
 
-func (em *EventMem) Add(e *Event) error {
-	//nx := em.NextId()
-	em.mux.Lock()
-	defer em.mux.Unlock()
-	em.maxId += 1
-	e.EventID = em.maxId
-	em.events[e.EventID] = e
+func (m *Mem) NextId() uint64 {
+	m.mux.Lock()
+	defer m.mux.Unlock()
+	m.maxId += 1
+	return m.maxId
+}
+
+func (m *Mem) Add(e *Event) error {
+	//nx := m.NextId()
+	m.mux.Lock()
+	defer m.mux.Unlock()
+	m.maxId += 1
+	e.EventId = m.maxId
+	m.events[e.EventId] = e
 	return nil
 }
 
-func (em *EventMem) Fetch(pk uint64) *Event {
-	em.mux.RLock()
-	defer em.mux.RUnlock()
-	e, ok := em.events[pk]
+func (m *Mem) Fetch(pk uint64) *Event {
+	m.mux.RLock()
+	defer m.mux.RUnlock()
+	e, ok := m.events[pk]
 	if ok {
 		return e
 	}
 	return nil
 }
 
-func (ex *EventMem) FetchGte(pk uint64, limit int32) []*Event {
+func (m *Mem) FetchGte(pk uint64, limit int32) []*Event {
 	if int32(0) == limit {
 		limit = 20
 	}

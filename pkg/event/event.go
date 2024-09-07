@@ -1,17 +1,18 @@
 package event
 
 type Event struct {
-	EventID         uint64 `json:"event_id"`
+	EventId         uint64 `json:"event_id" xorm:"pk autoincr"`
 	EventType       string `json:"event_type"`
 	EntityType      string `json:"entity_type"`
 	EntityId        uint64 `json:"entity_id"`
 	EventData       string `json:"event_data"`
+	CreatedTime     int64  `json:"created_time" xorm:"created"`
 	TriggeringEvent string `json:"triggering_event"` // 重复事件与消息的检测
 }
 
 type Entity struct {
+	EntityTypeId  uint64 `json:"entity_type_id" xorm:"pk autoincr"` // 实体类别
 	EntityType    string `json:"entity_type"`
-	EntityId      uint64 `json:"entity_id"`
 	EntityVersion uint32 `json:"entity_version"`
 	// EntitySchema  string `json:"entity_schema"`
 }
@@ -23,7 +24,7 @@ type Snapshot struct {
 	TriggeringEvent  string `json:"triggering_event"`
 }
 
-type EventInterface interface {
+type IEvent interface {
 	Add(e *Event) error
 	Fetch(pk uint64) *Event
 	FetchGte(pk uint64, limit int32) []*Event
