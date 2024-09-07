@@ -25,6 +25,7 @@ type Snapshot struct {
 }
 
 type IEvent interface {
+	Driver() string
 	Add(e *Event) error
 	Fetch(eventId uint64) *Event
 	FetchGte(eventId uint64, limit int32) []*Event

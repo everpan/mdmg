@@ -10,32 +10,36 @@ const (
 	SnapshotTable = "icode_snapshot"
 )
 
-type XORM struct {
+type XORMEvent struct {
 	engine *xorm.Engine
 }
 
-func NewXORM() *XORM {
-	return &XORM{}
+func NewXORMEvent() *XORMEvent {
+	return &XORMEvent{}
 }
 
-func NewXORMWithEngine(engine *xorm.Engine) *XORM {
-	x := NewXORM()
+func NewXORMEventWithEngine(engine *xorm.Engine) *XORMEvent {
+	x := NewXORMEvent()
 	x.SetEngine(engine)
 	x.setup()
 	return x
 }
 
-func (x *XORM) setup() {
+func (x *XORMEvent) setup() {
 	x.engine.Table(EventTable).CreateTable(&Event{})
 	x.engine.Table(EntityTable).CreateTable(&Entity{})
 	x.engine.Table(SnapshotTable).CreateTable(&Snapshot{})
 }
 
-func (x *XORM) SetEngine(e *xorm.Engine) {
+func (x *XORMEvent) SetEngine(e *xorm.Engine) {
 	x.engine = e
 }
 
-func (x *XORM) Add(e *Event) error {
+func (x *XORMEvent) Driver() string {
+	return "xorm"
+}
+
+func (x *XORMEvent) Add(e *Event) error {
 	e.EventId = *new(uint64)
 	_, err := x.engine.Table("icode_event").Insert(e)
 	if nil != err {
@@ -45,7 +49,7 @@ func (x *XORM) Add(e *Event) error {
 	return nil
 }
 
-func (x *XORM) Fetch(eventId uint64) *Event {
+func (x *XORMEvent) Fetch(eventId uint64) *Event {
 	e := &Event{EventId: eventId}
 	b, err := x.engine.Table(EventTable).Get(e)
 	if nil != err {
@@ -58,7 +62,7 @@ func (x *XORM) Fetch(eventId uint64) *Event {
 	return nil
 }
 
-func (x *XORM) FetchGte(eventId uint64, limit int32) []*Event {
+func (x *XORMEvent) FetchGte(eventId uint64, limit int32) []*Event {
 	if int32(0) == limit {
 		limit = 20
 	}
