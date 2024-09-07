@@ -1,6 +1,7 @@
 package event
 
 import (
+	"strconv"
 	"xorm.io/xorm"
 )
 
@@ -48,6 +49,17 @@ func (x *XORMEvent) Add(e *Event) error {
 	}
 	Pub(e)
 	return nil
+}
+
+func (x *XORMEvent) MaxId() uint64 {
+	sql := "SELECT MAX(event_id) as m FROM icode_event"
+	r, err := x.engine.Query(sql)
+	if err != nil {
+		x.engine.Logger().Errorf("Get max id error: %v", err)
+		return 0
+	}
+	m, _ := strconv.ParseUint(string(r[0]["m"]), 10, 64)
+	return m
 }
 
 func (x *XORMEvent) Fetch(eventId uint64) *Event {

@@ -54,6 +54,8 @@ func AddFetch(t *testing.T, inst IEvent) {
 			// 并行情况下,equal 不稳定 改为判断 > 0
 			assert.Greater(t, d.ev.EventId, uint64(0))
 			assert.Equal(t, d.ev.EventId, self.EventId)
+			max := inst.MaxId()
+			assert.GreaterOrEqual(t, max, d.ev.EventId)
 		})
 	}
 

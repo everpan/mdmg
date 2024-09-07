@@ -32,7 +32,13 @@ func NewRedisEventWithClient(client *redis.Client) *RedisEvent {
 func (r *RedisEvent) Driver() string {
 	return "redis"
 }
-
+func (r *RedisEvent) MaxId() uint64 {
+	id, err := r.client.Get(r.ctx, ICodeEventAutoIncKey).Uint64()
+	if err != nil {
+		return 0
+	}
+	return id
+}
 func (r *RedisEvent) Add(e *Event) error {
 	e.EventId, _ = r.client.Incr(r.ctx, ICodeEventAutoIncKey).Uint64()
 	key := fmt.Sprintf("%s%v", ICodeEventPrefix, e.EventId)
