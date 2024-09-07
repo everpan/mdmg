@@ -81,3 +81,7 @@ func (x *XORMEvent) FetchGte(eventId uint64, limit int32) []*Event {
 	}
 	return nil
 }
+
+func (x *XORMEvent) Close() {
+	x.engine.Close()
+}

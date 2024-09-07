@@ -14,6 +14,7 @@ func TestMemEvent_AddFetch(t *testing.T) {
 	AddFetch(t, m)
 }
 func TestXORMEvent_AddFetch(t *testing.T) {
+	t.Skip("manual run, must start mysql server first")
 	engine, err := xorm.NewEngine("sqlite3", "./sqlite_event_test.db")
 	engine.ShowSQL(true)
 	if err != nil {
@@ -25,7 +26,7 @@ func TestXORMEvent_AddFetch(t *testing.T) {
 }
 
 func TestRedisEvent_AddFetch(t *testing.T) {
-	// redis
+	t.Skip("manual run, must start redis server first")
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "", // 没有密码，默认值

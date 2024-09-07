@@ -30,6 +30,7 @@ type IEvent interface {
 	Add(e *Event) error
 	Fetch(eventId uint64) *Event
 	FetchGte(eventId uint64, limit int32) []*Event
+	Close()
 }
 
 var eventChan chan *Event

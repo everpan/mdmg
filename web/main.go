@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/everpan/mdmg/pkg/log"
 	"github.com/everpan/mdmg/v8runtime"
 	"github.com/everpan/mdmg/web/handler"
 	"github.com/gofiber/contrib/fgprof"
@@ -9,7 +10,6 @@ import (
 	"github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
 	"time"
 )
 
@@ -35,8 +35,8 @@ func viperDefault() {
 }
 func CreateApp() *fiber.App {
 	app := fiber.New()
-	// contrib/fiberzap
-	logger, _ := zap.NewDevelopment()
+	logger := log.GetLogger()
+
 	app.Use(fiberzap.New(fiberzap.Config{
 		Logger: logger,
 	}))

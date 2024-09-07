@@ -66,3 +66,7 @@ func (r *RedisEvent) Fetch(eventId uint64) *Event {
 func (r *RedisEvent) FetchGte(eventId uint64, limit int32) []*Event {
 	return nil
 }
+
+func (r *RedisEvent) Close() {
+	r.client.Close()
+}

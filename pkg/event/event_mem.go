@@ -64,3 +64,6 @@ func (m *MemEvent) FetchGte(eventId uint64, limit int32) []*Event {
 	}
 	return nil
 }
+func (m *MemEvent) Close() {
+
+}
