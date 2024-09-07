@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	ICodeEventAutoIncKey = "i_event_inc_key"
-	ICodeEventPrefix     = "i_event_"
+	ICodeEventAutoIncKey = "ic_event_inc_key"
+	ICodeEventPrefix     = "ic_event_"
 )
 
 type RedisEvent struct {
@@ -40,6 +40,7 @@ func (r *RedisEvent) Add(e *Event) error {
 		return err
 	}
 	r.client.Set(r.ctx, key, data, 0)
+	Pub(e)
 	return nil
 }
 

@@ -46,6 +46,7 @@ func (x *XORMEvent) Add(e *Event) error {
 		x.engine.Logger().Errorf("Add event: %v fail : %v", e, err)
 		return err
 	}
+	Pub(e)
 	return nil
 }
 

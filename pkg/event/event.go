@@ -30,3 +30,25 @@ type IEvent interface {
 	Fetch(eventId uint64) *Event
 	FetchGte(eventId uint64, limit int32) []*Event
 }
+
+var eventChan chan *Event
+
+func InitEventChan(pool int, handler func()) {
+	if eventChan != nil {
+		close(eventChan)
+	}
+	if pool < 0 {
+		pool = 100
+	}
+	eventChan = make(chan *Event, pool)
+	if handler != nil {
+		go handler()
+	}
+}
+
+func Pub(event *Event) {
+	if eventChan == nil {
+		return
+	}
+	eventChan <- event
+}

@@ -14,7 +14,7 @@ func TestMemEvent_AddFetch(t *testing.T) {
 	AddFetch(t, m)
 }
 func TestXORMEvent_AddFetch(t *testing.T) {
-	engine, err := xorm.NewEngine("sqlite3", "./event_test.db")
+	engine, err := xorm.NewEngine("sqlite3", "./sqlite_event_test.db")
 	engine.ShowSQL(true)
 	if err != nil {
 		fmt.Println(err)
