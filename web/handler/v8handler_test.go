@@ -80,11 +80,12 @@ func TestIcodeHandler(t *testing.T) {
 	}
 	app := fiber.New()
 	// Path:    "/v1/icode/:modVer/:jsFile/*",
+	app.Use("/api")
 	app.Group(ICoderHandler.Path, ICoderHandler.Handler)
 	config.DefaultConfig.JSModuleRootPath = "../script_module"
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			target := "/v1/icode/test-0.1.0/" + strings.TrimSpace(tt.scriptFileName)
+			target := "/api/v1/icode/test-0.1.0/" + strings.TrimSpace(tt.scriptFileName)
 			req := httptest.NewRequest(tt.method, target, nil)
 			req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 			resp, err := app.Test(req)

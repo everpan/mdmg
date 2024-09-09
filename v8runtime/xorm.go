@@ -6,24 +6,24 @@ import (
 	"xorm.io/xorm"
 )
 
-func ExportXormObject(ctx *Ctx, iso *v8.Isolate) *v8.ObjectTemplate {
+func ExportXormObject(engine *xorm.Engine, iso *v8.Isolate) *v8.ObjectTemplate {
 	obj := v8.NewObjectTemplate(iso)
-	_ = obj.Set("exec", execSql(ctx, iso))
-	_ = obj.Set("transaction_exec", transactionExec(ctx, iso))
-	_ = obj.Set("tExec", transactionExec(ctx, iso))
-	_ = obj.Set("query", queryInterface(ctx, iso))
+	_ = obj.Set("exec", execSql(engine, iso))
+	_ = obj.Set("transaction_exec", transactionExec(engine, iso))
+	_ = obj.Set("tExec", transactionExec(engine, iso))
+	_ = obj.Set("query", queryInterface(engine, iso))
 
 	return obj
 }
 
-func execSql(ctx *Ctx, iso *v8.Isolate) *v8.FunctionTemplate {
+func execSql(engine *xorm.Engine, iso *v8.Isolate) *v8.FunctionTemplate {
 	return v8.NewFunctionTemplate(iso, func(info *v8.FunctionCallbackInfo) *v8.Value {
 		c := info.Context()
 		if len(info.Args()) < 0 {
 			return utils.JsException(c, "no sql found")
 		}
 		args, _ := utils.ToGoValues(c, info.Args())
-		ret, err := ctx.Engine().Exec(args...)
+		ret, err := engine.Exec(args...)
 		if err != nil {
 			return utils.JsError(c, err.Error())
 		}
@@ -39,14 +39,13 @@ func execSql(ctx *Ctx, iso *v8.Isolate) *v8.FunctionTemplate {
 	})
 }
 
-func transactionExec(ctx *Ctx, iso *v8.Isolate) *v8.FunctionTemplate {
+func transactionExec(engine *xorm.Engine, iso *v8.Isolate) *v8.FunctionTemplate {
 	return v8.NewFunctionTemplate(iso, func(info *v8.FunctionCallbackInfo) (r *v8.Value) {
 		c := info.Context()
 		if len(info.Args()) < 1 {
 			return utils.JsException(c, "no sql found")
 		}
-		eng := ctx.Engine()
-		sess := eng.NewSession()
+		sess := engine.NewSession()
 		defer func(sess *xorm.Session) {
 			_ = sess.Close()
 		}(sess)
@@ -54,7 +53,7 @@ func transactionExec(ctx *Ctx, iso *v8.Isolate) *v8.FunctionTemplate {
 			return utils.JsError(c, "error begin transaction")
 		}
 		args, _ := utils.ToGoValues(c, info.Args())
-		if _, err := ctx.Engine().Exec(args...); err != nil {
+		if _, err := engine.Exec(args...); err != nil {
 			return utils.JsError(c, "error exec sql")
 		}
 		err := sess.Commit()
@@ -65,15 +64,14 @@ func transactionExec(ctx *Ctx, iso *v8.Isolate) *v8.FunctionTemplate {
 		return
 	})
 }
-func queryInterface(ctx *Ctx, iso *v8.Isolate) *v8.FunctionTemplate {
+func queryInterface(engine *xorm.Engine, iso *v8.Isolate) *v8.FunctionTemplate {
 	return v8.NewFunctionTemplate(iso, func(info *v8.FunctionCallbackInfo) (r *v8.Value) {
 		c := info.Context()
 		if len(info.Args()) < 1 {
 			return utils.JsException(c, "no sql found")
 		}
-		eng := ctx.Engine()
 		args, _ := utils.ToGoValues(c, info.Args())
-		results, err := eng.QueryInterface(args...)
+		results, err := engine.QueryInterface(args...)
 		if err != nil {
 			return utils.JsException(c, err.Error())
 		}

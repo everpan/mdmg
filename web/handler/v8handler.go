@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/everpan/mdmg/utils"
-	"github.com/everpan/mdmg/v8runtime"
 	"github.com/everpan/mdmg/web/config"
 	"github.com/gofiber/fiber/v2"
 	"io/fs"
@@ -14,25 +13,25 @@ import (
 	"strings"
 )
 
-func icodeHandler(fc *fiber.Ctx) error {
-	zCtx := v8runtime.AcquireCtx(fc)
-	zCtx.ModuleVersion = fc.Params("modVer")
+func icodeHandler(ctx *Context) error {
+	fc := ctx.fc
+	ctx.ModuleVersion = fc.Params("modVer")
 	fName := fc.Params("jsFile")
 	subFile := fc.Params("*1")
 	var shortFileName string
 	if len(subFile) == 0 {
-		shortFileName = filepath.Join(zCtx.ModuleVersion, config.DefaultConfig.JSModuleBeckEndDir, fName+".js")
+		shortFileName = filepath.Join(ctx.ModuleVersion, config.DefaultConfig.JSModuleBeckEndDir, fName+".js")
 	} else {
 		subs := strings.Split(subFile, "/")
 		substr := filepath.Join(subs...)
-		shortFileName = filepath.Join(zCtx.ModuleVersion, config.DefaultConfig.JSModuleBeckEndDir, fName, substr+".js")
+		shortFileName = filepath.Join(ctx.ModuleVersion, config.DefaultConfig.JSModuleBeckEndDir, fName, substr+".js")
 	}
 	var err error
 	var r1, r2, output *v8.Value
-	r1, err = runScriptByFileShortName(zCtx, shortFileName)
+	r1, err = runScriptByFileShortName(ctx, shortFileName)
 	if err == nil {
 		defer r1.Release()
-		r2, err = runMethodScript(fc.Method(), r1, zCtx.V8Ctx())
+		r2, err = runMethodScript(fc.Method(), r1, ctx.v8Ctx)
 		if err == nil {
 			defer r2.Release()
 			var o *v8.Object
@@ -44,7 +43,7 @@ func icodeHandler(fc *fiber.Ctx) error {
 						err = errors.New("output object is not found in response")
 					} else {
 						var gv any
-						gv, err = utils.ToGoValue(zCtx.V8Ctx(), output)
+						gv, err = utils.ToGoValue(ctx.v8Ctx, output)
 						if err == nil {
 							resp := ICodeResponse{
 								Code: 0,
@@ -69,7 +68,7 @@ func icodeHandler(fc *fiber.Ctx) error {
 	return nil
 }
 
-func runScriptByFileShortName(ctx *v8runtime.Ctx, shortFileName string) (*v8.Value, error) {
+func runScriptByFileShortName(ctx *Context, shortFileName string) (*v8.Value, error) {
 	scriptFile := filepath.Join(config.DefaultConfig.JSModuleRootPath, shortFileName)
 	scriptContext, err := os.ReadFile(scriptFile)
 	if err != nil {

@@ -1,6 +1,6 @@
 package handler
 
-var ICoderHandler = PathHandler{
+var ICoderHandler = MyHandlerExport{
 	Path:    "/v1/icode/:modVer/:jsFile/*",
 	Handler: icodeHandler,
 }

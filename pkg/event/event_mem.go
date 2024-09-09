@@ -44,7 +44,7 @@ func (m *MemEvent) Add(e *Event) error {
 	m.maxId += 1
 	e.EventId = m.maxId
 	m.events[e.EventId] = e
-	Pub(e)
+	pubAfter(e)
 	return nil
 }
 

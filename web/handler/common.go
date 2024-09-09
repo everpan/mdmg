@@ -11,11 +11,6 @@ type ICodeResponse struct {
 	Data    any    `json:"data,omitempty"`
 }
 
-type PathHandler struct {
-	Path    string
-	Handler fiber.Handler
-}
-
 func NewICodeResponse(code int, message string, data interface{}) *ICodeResponse {
 	return &ICodeResponse{Code: code, Message: message, Data: data}
 }
@@ -38,4 +33,10 @@ func SendError(fc *fiber.Ctx, status int, e error) error {
 	fc.SendStatus(status)
 	resp := NewICodeResponse(-1, e.Error(), nil)
 	return fc.Send(resp.Marshal())
+}
+func AppRouterAdd(router fiber.Router, h *MyHandlerExport) {
+	router.Group(h.Path, h.Handler.WrapHandler())
+}
+func RegisterHandler(app *fiber.App, h *MyHandlerExport) {
+	app.Group(h.Path, h.Handler.WrapHandler())
 }

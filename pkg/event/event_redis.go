@@ -4,8 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/everpan/mdmg/pkg/log"
 	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 )
+
+var logger = log.GetLogger()
 
 // icEv = icode event
 const (
@@ -47,7 +51,7 @@ func (r *RedisEvent) Add(e *Event) error {
 		return err
 	}
 	r.client.Set(r.ctx, key, data, 0)
-	Pub(e)
+	pubAfter(e)
 	return nil
 }
 
@@ -57,6 +61,7 @@ func (r *RedisEvent) Fetch(eventId uint64) *Event {
 	data, err := r.client.Get(r.ctx, key).Bytes()
 	if err != nil {
 		// fmt.Println("err0r", err.Error())
+		logger.Error("event get", zap.String("key", key), zap.Error(err))
 		return nil
 	}
 	json.Unmarshal(data, e)

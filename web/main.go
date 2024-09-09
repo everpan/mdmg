@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/everpan/mdmg/pkg/log"
-	"github.com/everpan/mdmg/v8runtime"
+	"github.com/everpan/mdmg/pkg/tenant"
 	"github.com/everpan/mdmg/web/handler"
 	"github.com/gofiber/contrib/fgprof"
 	"github.com/gofiber/contrib/fiberzap/v2"
@@ -11,6 +11,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/viper"
 	"time"
+	"xorm.io/xorm"
 )
 
 func init() {
@@ -32,8 +33,16 @@ func viperDefault() {
 	viper.SetDefault("static.public", "./")
 	viper.SetDefault("swagger.file", "./docs/swagger.json")
 	viper.SetDefault("swagger.path", "./swagger")
+	viper.SetDefault("db.driver", "sqlite3")
+	viper.SetDefault("db.connect", "./ic.db")
 }
 func CreateApp() *fiber.App {
+
+	var defaultEngin, _ = xorm.NewEngine(
+		viper.GetString("db.driver"),
+		viper.GetString("db.connect"))
+	tenant.SetEngine(defaultEngin)
+
 	app := fiber.New()
 	logger := log.GetLogger()
 
@@ -50,7 +59,7 @@ func CreateApp() *fiber.App {
 	app.Use(fgprof.New())
 
 	apiRouter := app.Group("/api")
-	apiRouter.Group(handler.ICoderHandler.Path, handler.ICoderHandler.Handler)
+	handler.AppRouterAdd(apiRouter, &handler.ICoderHandler)
 
 	staticConf := fiber.Static{
 		Compress:      true,
@@ -67,8 +76,6 @@ func CreateApp() *fiber.App {
 }
 
 func main() {
-	defer v8runtime.DisposeCtxPool()
-
 	app := CreateApp()
 	addr := fmt.Sprintf("%s:%d", viper.GetString("host.addr"), viper.GetInt("host.port"))
 	app.Listen(addr)

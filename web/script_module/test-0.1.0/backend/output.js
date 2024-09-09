@@ -1,9 +1,9 @@
 get = () => {
     return {
         output: { // 输出结果
-            headers: icode.header(),
-            module: icode.module(),
-            version: icode.version()
+            headers: ic.ctx.header(),
+            module: ic.ctx.module(),
+            version: ic.ctx.version()
         }
     }
 }

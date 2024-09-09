@@ -33,7 +33,21 @@ type IEvent interface {
 	Close()
 }
 
-var eventChan chan *Event
+var (
+	AppEvent     IEvent
+	appEventChan chan *Event // 应用发布的，通常用于持久化
+	eventChan    chan *Event // 持久化完成之后的应用，例如：分发
+)
+
+func init() {
+	appEventChan = make(chan *Event, 10)
+	go func() {
+		for {
+			event := <-appEventChan
+			AppEvent.Add(event)
+		}
+	}()
+}
 
 func InitEventChan(pool int, handler func()) {
 	if eventChan != nil {
@@ -48,9 +62,13 @@ func InitEventChan(pool int, handler func()) {
 	}
 }
 
-func Pub(event *Event) {
+func pubAfter(event *Event) {
 	if eventChan == nil {
 		return
 	}
 	eventChan <- event
+}
+
+func Pub(event *Event) {
+	appEventChan <- event
 }
