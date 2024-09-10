@@ -12,7 +12,6 @@ func ExportXormObject(engine *xorm.Engine, iso *v8.Isolate) *v8.ObjectTemplate {
 	_ = obj.Set("transaction_exec", transactionExec(engine, iso))
 	_ = obj.Set("tExec", transactionExec(engine, iso))
 	_ = obj.Set("query", queryInterface(engine, iso))
-
 	return obj
 }
 

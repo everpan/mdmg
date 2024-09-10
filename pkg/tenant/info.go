@@ -1,6 +1,7 @@
 package tenant
 
 import (
+	"errors"
 	"github.com/Microsoft/go-winio/pkg/guid"
 	"github.com/everpan/mdmg/pkg/log"
 	"github.com/everpan/mdmg/pkg/store"
@@ -26,30 +27,32 @@ type Info struct {
 var (
 	cache               = store.OneLevelMap[string, *Info]{}
 	namespace           guid.GUID
-	DefaultSystemEngine *xorm.Engine
+	defaultSystemEngine *xorm.Engine
 	engineCache         = store.OneLevelMap[string, *xorm.Engine]{}
 )
 
-func SetEngine(e *xorm.Engine) {
-	DefaultSystemEngine = e
-}
-
 var (
 	DefaultInfo = Info{
-		Idx:       0,
+		Idx:       1,
 		SId:       DefaultGuidNamespace,
 		En:        "default_test",
 		Cn:        "默认租户",
 		IsTestEnv: true,
 	}
 	DefaultHostInfo = Info{
-		Idx:    1,
+		Idx:    2,
 		SId:    "22222222-2222-2222-2222-222222222222",
 		En:     "host",
 		Cn:     "运营商",
 		IsHost: true,
 	}
 )
+
+const InfoTableName = "ic_tenant_info"
+
+func SetEngine(e *xorm.Engine) {
+	defaultSystemEngine = e
+}
 
 func init() {
 	namespace, _ = guid.FromString(DefaultGuidNamespace)
@@ -68,9 +71,9 @@ func NewTenantInfo(sid string, en string, cn string, extension string, isTest bo
 func (tenant *Info) SaveTenantInfo() error {
 	var err error
 	if tenant.Idx == 0 {
-		_, err = DefaultSystemEngine.Insert(tenant)
+		_, err = defaultSystemEngine.Insert(tenant)
 	} else {
-		_, err = DefaultSystemEngine.Update(tenant)
+		_, err = defaultSystemEngine.Update(tenant)
 	}
 	return err
 }
@@ -82,7 +85,10 @@ func AcquireTenantInfoBySid(sid string) (*Info, error) {
 	}
 	info = &Info{SId: sid}
 	var err error
-	ok, err = DefaultSystemEngine.Get(info)
+	if nil == defaultSystemEngine {
+		return nil, errors.New("default system engine is null")
+	}
+	ok, err = defaultSystemEngine.Table(InfoTableName).Get(info)
 	if ok {
 		cache.Set(sid, info)
 		return info, nil
@@ -90,7 +96,7 @@ func AcquireTenantInfoBySid(sid string) (*Info, error) {
 	if nil != err {
 		log.GetLogger().Error("query tenant", zap.String("sid", sid), zap.Error(err))
 	}
-	return nil, nil
+	return nil, err
 }
 
 func AcquireEngine(info *Info) (*xorm.Engine, error) {
@@ -102,7 +108,7 @@ func AcquireEngine(info *Info) (*xorm.Engine, error) {
 	var err error
 	eng, err = xorm.NewEngine(driver, connStr)
 	if err != nil {
-		log.GetLogger().Error("create DefaultSystemEngine failed",
+		log.GetLogger().Error("create defaultSystemEngine failed",
 			zap.String("driver", driver), zap.String("connStr", connStr), zap.Error(err))
 		return nil, err
 	}

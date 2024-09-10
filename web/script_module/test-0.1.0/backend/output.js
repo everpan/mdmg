@@ -1,9 +1,10 @@
+let ctx = __ic.ctx
 get = () => {
     return {
         output: { // 输出结果
-            headers: ic.ctx.header(),
-            module: ic.ctx.module(),
-            version: ic.ctx.version()
+            headers: ctx.header(),
+            module: ctx.module(),
+            version: ctx.version()
         }
     }
 }

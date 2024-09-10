@@ -1,14 +1,20 @@
 package handler
 
 import (
+	"github.com/everpan/mdmg/pkg/log"
+	"github.com/everpan/mdmg/pkg/tenant"
 	"github.com/everpan/mdmg/web/config"
 	"github.com/gofiber/fiber/v2"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
+	"xorm.io/xorm"
 )
 
 type checkFun func(t *testing.T, r *http.Response, e error)
@@ -54,6 +60,17 @@ var wantInternalServerError = func(msg string) func(*testing.T, *http.Response, 
 	}
 }
 
+func InitTable(e *xorm.Engine) {
+	e.Table(tenant.InfoTableName).CreateTable(&tenant.Info{})
+	DefaultInfo := tenant.DefaultInfo
+	DefaultInfo.Driver = "sqlite3"
+	DefaultInfo.ConnectString = "./v8handler_test.db"
+	_, err := e.Table(tenant.InfoTableName).Insert(&DefaultInfo, &tenant.DefaultHostInfo)
+	if err != nil {
+		log.GetLogger().Error("insert 111...", zap.Error(err))
+	}
+}
+
 func TestIcodeHandler(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -77,15 +94,22 @@ func TestIcodeHandler(t *testing.T) {
 			contains(-1, "not found the handler of method(PUT)")},
 		{"dir1/dir2/dir3", fiber.MethodPut, "sub1/sub2/output",
 			contains(-1, "/sub1/sub2/output.js")},
+		{"fetch from db", fiber.MethodGet, "tenant",
+			contains(0, "默认租户")},
 	}
 	app := fiber.New()
-	// Path:    "/v1/icode/:modVer/:jsFile/*",
-	app.Use("/api")
-	app.Group(ICoderHandler.Path, ICoderHandler.Handler)
+	AppRouterAdd(app, &ICoderHandler)
 	config.DefaultConfig.JSModuleRootPath = "../script_module"
+	os.Remove("./v8handler_test.db")
+	var defaultEngin, err = xorm.NewEngine("sqlite3", "./v8handler_test.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tenant.SetEngine(defaultEngin)
+	InitTable(defaultEngin)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			target := "/api/v1/icode/test-0.1.0/" + strings.TrimSpace(tt.scriptFileName)
+			target := "/v1/icode/test-0.1.0/" + strings.TrimSpace(tt.scriptFileName)
 			req := httptest.NewRequest(tt.method, target, nil)
 			req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 			resp, err := app.Test(req)
