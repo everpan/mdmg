@@ -74,8 +74,13 @@ func (c *Context) ExportV8ObjectTemplate(iso *v8.Isolate) *v8.ObjectTemplate {
 		jv, _ := v8.NewValue(iso, v)
 		return jv
 	})
+	ti := v8.NewFunctionTemplate(iso, func(info *v8.FunctionCallbackInfo) *v8.Value {
+		jv, _ := utils.ToJsValue(info.Context(), c.tenant)
+		return jv
+	})
 	ctxObj := v8runtime.ExportObject(c.fc, iso)
 	_ = ctxObj.Set("module", mf)
 	_ = ctxObj.Set("version", vf)
+	_ = ctxObj.Set("tenant", ti)
 	return ctxObj
 }

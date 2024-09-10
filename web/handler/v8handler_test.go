@@ -96,11 +96,13 @@ func TestIcodeHandler(t *testing.T) {
 			contains(-1, "/sub1/sub2/output.js")},
 		{"fetch from db", fiber.MethodGet, "tenant",
 			contains(0, "默认租户")},
+		{"fetch tenant info", fiber.MethodGet, "tenant",
+			contains(0, "tenant_info\":{")},
 	}
 	app := fiber.New()
 	AppRouterAdd(app, &ICoderHandler)
 	config.DefaultConfig.JSModuleRootPath = "../script_module"
-	os.Remove("./v8handler_test.db")
+	defer os.Remove("./v8handler_test.db")
 	var defaultEngin, err = xorm.NewEngine("sqlite3", "./v8handler_test.db")
 	if err != nil {
 		t.Fatal(err)

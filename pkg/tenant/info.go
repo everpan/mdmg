@@ -13,7 +13,7 @@ const DefaultGuidNamespace = "11111111-1111-1111-1111-111111111111"
 
 type Info struct {
 	Idx           uint32 `json:"idx" xorm:"tenant_id pk autoincr"`
-	SId           string `json:"sid" xorm:"char(36) notnull unique"`
+	SId           string `json:"sid" xorm:"sid char(36) notnull unique"`
 	En            string `json:"en" xorm:"varchar(64) notnull unique"` // 英文名称，用于登录，区分租户
 	Cn            string `json:"cn" xorm:"varchar(128) notnull"`       // 中文名称
 	Driver        string `json:"driver" xorm:"varchar(128) notnull"`
