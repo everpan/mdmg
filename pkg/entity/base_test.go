@@ -2,16 +2,17 @@ package entity
 
 import (
 	"fmt"
+	"testing"
+
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
-	"testing"
 	"xorm.io/xorm"
 )
 
 func setUp() {
 	engine, err := xorm.NewEngine("sqlite3", "./entity_test.db")
 	if err != nil {
-		fmt.Errorf("failed to setup test engine: %v", err)
+		fmt.Printf("failed to setup test engine: %v", err.Error())
 	}
 	engine.ShowSQL(true)
 	SetEngine(engine)
@@ -86,7 +87,7 @@ func TestQueryEntityBaseByClsIdAndUKey(t *testing.T) {
 		{"fetch not exist", args{uint32(9), "key1"}, nil},
 		{"fetch not exist", args{uint32(1), "key9"}, nil},
 		{"fetch not exist", args{uint32(0), "key9"}, nil},
-		{"** fetch when cls=0 and ukey is exist", args{uint32(0), "key1"}, nil},
+		{"** fetch when cls=0 and ukey is exist **", args{uint32(0), "key1"}, nil},
 	}
 
 	for _, tt := range tests {
