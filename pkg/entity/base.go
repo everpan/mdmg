@@ -3,6 +3,7 @@ package entity
 import (
 	"errors"
 	"fmt"
+
 	"github.com/everpan/mdmg/pkg/log"
 	"github.com/everpan/mdmg/pkg/store"
 	"go.uber.org/zap"
@@ -25,7 +26,7 @@ type IcClusterTable struct {
 	ClusterId        uint32 // 簇表名
 	ClusterName      string // 簇名
 	ClassId          uint32 `xorm:"index"`  // 所属实体类
-	ClusterDesc      string `xorm:"text"`   // 簇名
+	ClusterDesc      string `xorm:"text"`   // 簇描述
 	ClusterTableName string `xorm:"unique"` // unique 簇表名； 至少包含EntityPKColumn
 }
 
@@ -87,6 +88,13 @@ func (ctx *Context) RegisterEntityClass(ec *IcEntityClass) (*IcEntityClass, erro
 	return ctx.GetEntityClass(ec.ClassId)
 }
 
+// RegisterClassName 注册实体类名，其他信息后续补充，否则不能工作；主要简化工作
+
+func (ctx *Context) RegisterClassName(className string) (*IcEntityClass, error) {
+	ec := &IcEntityClass{ClassName: className}
+	return ctx.RegisterEntityClass(ec)
+}
+
 func (ctx *Context) GetEntityClass(classId uint32) (*IcEntityClass, error) {
 	if classId == 0 {
 		return nil, errors.New("classId is 0")
@@ -106,7 +114,7 @@ func (ctx *Context) GetEntityClass(classId uint32) (*IcEntityClass, error) {
 		ctx.entityClassCache.Set(ec.ClassId, ec)
 		return ec, nil
 	}
-	return nil, errors.New(fmt.Sprintf("entity classId:%d not found", classId))
+	return nil, fmt.Errorf("entity classId:%d not found", classId)
 }
 
 func (ctx *Context) GetEntityClassByName(className string) (*IcEntityClass, error) {
@@ -117,21 +125,15 @@ func (ctx *Context) GetEntityClassByName(className string) (*IcEntityClass, erro
 		return nil, err
 	}
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("entity className:%s not found", className))
+		return nil, fmt.Errorf("entity className:%s not found", className)
 	}
 	return ec, nil
 }
 
-// AddClusterTable 增加簇表
-// 条件 ： classId > 0     存在实体类
-//		  ClusterId == 0  簇类为新
-
-func (ctx *Context) AddClusterTable(ct *IcClusterTable) error {
-	if ct.ClassId == 0 {
-		return errors.New("classId is 0")
-	}
+// AddClusterTableWithoutCheckClassId classId == 0 的情况下，注册簇属性表
+func (ctx *Context) AddClusterTableWithoutCheckClassId(ct *IcClusterTable) error {
 	if ct.ClusterId != 0 {
-		return errors.New("clusterId is not 0, pls use GetClusterTable")
+		return fmt.Errorf("clusterId:%d is not 0, pls use GetClusterTable to get details", ct.ClusterId)
 	}
 	var (
 		err    error
@@ -162,4 +164,15 @@ func (ctx *Context) AddClusterTable(ct *IcClusterTable) error {
 		ec.ClusterIdList = append(ec.ClusterIdList, ct.ClusterId)
 	}
 	return err
+}
+
+// AddClusterTable 增加簇表
+// 条件 ： classId > 0     存在实体类
+//		  ClusterId == 0  簇类为新
+
+func (ctx *Context) AddClusterTable(ct *IcClusterTable) error {
+	if ct.ClassId == 0 {
+		return errors.New("classId is 0")
+	}
+	return ctx.AddClusterTableWithoutCheckClassId(ct)
 }
