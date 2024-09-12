@@ -18,80 +18,148 @@ type IcEntityClass struct {
 	EntityPKColumn string `json:"entity_pk_column" xorm:"entity_pk_column index"`
 	EntityUKColumn string `json:"entity_uk_column" xorm:"entity_uk_column index"` // 实体主键列名;统一实体的列类型为uint64，可以采用数据库自增
 	// EntityPrimaryTable string           `xorm:"entity_primary_table unique"`
-	ClusterColumns []*IcClusterColumn `xorm:"text"` // 属性表，第一个为主属性表; 所以的簇属性必需包含与`EntityPKColumn`同名的主键字段
+	ClusterIdList []uint32 `json:"cluster_id_list,omitempty" xorm:"text default ''"` // 属性表，第一个为主属性表; 所以的簇属性必需包含与`EntityPKColumn`同名的主键字段
 }
 
-type IcClusterColumn struct {
+type IcClusterTable struct {
 	ClusterId        uint32 // 簇表名
 	ClusterName      string // 簇名
+	ClassId          uint32 `xorm:"index"`  // 所属实体类
 	ClusterDesc      string `xorm:"text"`   // 簇名
-	ClusterTableName string `xorm:"unique"` // unique 簇表名
+	ClusterTableName string `xorm:"unique"` // unique 簇表名； 至少包含EntityPKColumn
 }
 
 var (
-	engine           *xorm.Engine
-	logger           *zap.Logger
-	entityClassCache = store.OneLevelMap[uint32, *IcEntityClass]{}
+	logger *zap.Logger
 )
 
 func init() {
 	logger = log.GetLogger()
 }
 
-func InitTable() {
-	engine.CreateTables(&IcEntityClass{})
-	engine.CreateUniques(&IcEntityClass{})
-	engine.CreateIndexes(&IcEntityClass{})
-
-	engine.CreateTables(&IcClusterColumn{})
-	engine.CreateUniques(&IcClusterColumn{})
-
+type Context struct {
+	engine           *xorm.Engine
+	entityClassCache store.OneLevelMap[uint32, *IcEntityClass]
 }
 
-func SetEngine(eng *xorm.Engine) {
-	engine = eng
+func NewContext(engine *xorm.Engine) *Context {
+	return &Context{
+		engine:           engine,
+		entityClassCache: store.OneLevelMap[uint32, *IcEntityClass]{},
+	}
 }
 
-func insertNewEntityClass(ec *IcEntityClass) error {
-	_, err := engine.Insert(ec)
+func (ctx *Context) InitTable() {
+	ec := &IcEntityClass{}
+	ct := &IcClusterTable{}
+	engine := ctx.engine
+
+	_ = engine.CreateTables(ec, ct)
+	_ = engine.CreateUniques(ec)
+	_ = engine.CreateIndexes(ec)
+
+	_ = engine.CreateUniques(ct)
+	_ = engine.CreateIndexes(ct)
+}
+
+func (ctx *Context) SetEngine(eng *xorm.Engine) {
+	ctx.engine = eng
+}
+
+func (ctx *Context) insertNewEntityClass(ec *IcEntityClass) error {
+	_, err := ctx.engine.Insert(ec)
 	return err
 }
 
-func RegisterEntityClass(ec *IcEntityClass) *IcEntityClass {
+func (ctx *Context) RegisterEntityClass(ec *IcEntityClass) (*IcEntityClass, error) {
 	if ec.ClassId == 0 {
-		err := insertNewEntityClass(ec)
+		if ec.ClusterIdList == nil {
+			ec.ClusterIdList = []uint32{}
+		}
+		err := ctx.insertNewEntityClass(ec)
 		if err != nil {
 			logger.Error("Failed to insert new entity class", zap.Error(err))
+			return nil, err
 		}
-		entityClassCache.Set(ec.ClassId, ec)
-		return ec
+		ctx.entityClassCache.Set(ec.ClassId, ec)
+		return ec, nil
 	}
-
-	e, ok := entityClassCache.Get(ec.ClassId)
-	if ok {
-		return e
-	}
-	return nil
+	return ctx.GetEntityClass(ec.ClassId)
 }
 
-func GetEntityClass(classId uint32) (*IcEntityClass, error) {
+func (ctx *Context) GetEntityClass(classId uint32) (*IcEntityClass, error) {
 	if classId == 0 {
 		return nil, errors.New("classId is 0")
 	}
-	e, ok := entityClassCache.Get(classId)
+	e, ok := ctx.entityClassCache.Get(classId)
 	if ok {
 		return e, nil
 	}
 	ec := &IcEntityClass{ClassId: classId}
 	var err error
-	ok, err = engine.Get(ec)
+	ok, err = ctx.engine.Get(ec)
 	if err != nil {
 		logger.Error("Failed to get entity class", zap.Error(err))
 		return nil, err
 	}
 	if ok {
-		entityClassCache.Set(ec.ClassId, ec)
+		ctx.entityClassCache.Set(ec.ClassId, ec)
 		return ec, nil
 	}
 	return nil, errors.New(fmt.Sprintf("entity classId:%d not found", classId))
+}
+
+func (ctx *Context) GetEntityClassByName(className string) (*IcEntityClass, error) {
+	ec := &IcEntityClass{}
+	ok, err := ctx.engine.Where("class_name = ?", className).Get(ec)
+	if err != nil {
+		logger.Error("Failed to get entity class", zap.Error(err))
+		return nil, err
+	}
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("entity className:%s not found", className))
+	}
+	return ec, nil
+}
+
+// AddClusterTable 增加簇表
+// 条件 ： classId > 0     存在实体类
+//		  ClusterId == 0  簇类为新
+
+func (ctx *Context) AddClusterTable(ct *IcClusterTable) error {
+	if ct.ClassId == 0 {
+		return errors.New("classId is 0")
+	}
+	if ct.ClusterId != 0 {
+		return errors.New("clusterId is not 0, pls use GetClusterTable")
+	}
+	var (
+		err    error
+		ec     *IcEntityClass
+		ecCopy *IcEntityClass
+	)
+	_, err = ctx.engine.Insert(ct)
+	if err != nil {
+		return err
+	}
+	ec, err = ctx.GetEntityClass(ct.ClassId)
+	if err != nil {
+		logger.Error("Failed to get entity class", zap.Error(err))
+		return err
+	}
+	ecCopy, err = ctx.GetEntityClassByName(ec.ClassName) // from db
+	if err != nil {
+		return err
+	}
+	if ecCopy.ClusterIdList == nil {
+		ecCopy.ClusterIdList = []uint32{}
+	}
+	ecCopy.ClusterIdList = append(ecCopy.ClusterIdList, ct.ClusterId)
+	// update to db
+	_, err = ctx.engine.Update(ecCopy, &IcEntityClass{ClassId: ct.ClusterId})
+	if err == nil {
+		// 更新db成功，更新cache；竞争锁？
+		ec.ClusterIdList = append(ec.ClusterIdList, ct.ClusterId)
+	}
+	return err
 }
