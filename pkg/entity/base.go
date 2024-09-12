@@ -1,29 +1,27 @@
 package entity
 
 import (
+	"errors"
+	"fmt"
 	"github.com/everpan/mdmg/pkg/log"
 	"github.com/everpan/mdmg/pkg/store"
 	"go.uber.org/zap"
-	"math"
 	"xorm.io/xorm"
 )
 
-type IcEntityBase struct {
-	EntityId   uint64 `json:"entity_id" xorm:"autoincr pk notnull"`
-	ClassId    uint32 `xorm:"unique(cls_ukey) index"`
-	EntityUKey string `json:"entity_ukey" xorm:"entity_ukey unique(cls_ukey)"`
-}
-
-// IcEntityClass 实体类划分属性簇；
+// IcEntityClass 实体类； 划分属性簇； 注册管理，便于业务灵活定义
 // 尽可能每个簇属性放一个表内，通过 entity_id 关联
 type IcEntityClass struct {
-	ClassId      uint32           `xorm:"autoincr pk notnull"`
-	ClassName    string           `xorm:"unique"`
-	ClassDesc    string           `xorm:"text"` // 关于实体的描述信息
-	ClusterInfos []*IcClusterInfo `xorm:"text"` // 属性表，第一个为主属性表
+	ClassId        uint32 `xorm:"autoincr pk notnull"`
+	ClassName      string `xorm:"unique"`
+	ClassDesc      string `xorm:"text"` // 关于实体的描述信息
+	EntityPKColumn string `json:"entity_pk_column" xorm:"entity_pk_column index"`
+	EntityUKColumn string `json:"entity_uk_column" xorm:"entity_uk_column index"` // 实体主键列名;统一实体的列类型为uint64，可以采用数据库自增
+	// EntityPrimaryTable string           `xorm:"entity_primary_table unique"`
+	ClusterColumns []*IcClusterColumn `xorm:"text"` // 属性表，第一个为主属性表; 所以的簇属性必需包含与`EntityPKColumn`同名的主键字段
 }
 
-type IcClusterInfo struct {
+type IcClusterColumn struct {
 	ClusterId        uint32 // 簇表名
 	ClusterName      string // 簇名
 	ClusterDesc      string `xorm:"text"`   // 簇名
@@ -41,72 +39,59 @@ func init() {
 }
 
 func InitTable() {
-	engine.CreateTables(&IcEntityBase{}, &IcEntityClass{}, &IcClusterInfo{})
-	engine.CreateUniques(&IcEntityBase{})
+	engine.CreateTables(&IcEntityClass{})
 	engine.CreateUniques(&IcEntityClass{})
-	engine.CreateUniques(&IcClusterInfo{})
+	engine.CreateIndexes(&IcEntityClass{})
+
+	engine.CreateTables(&IcClusterColumn{})
+	engine.CreateUniques(&IcClusterColumn{})
+
 }
 
 func SetEngine(eng *xorm.Engine) {
 	engine = eng
 }
 
-func GetEntityClass(classId uint32) *IcEntityClass {
+func insertNewEntityClass(ec *IcEntityClass) error {
+	_, err := engine.Insert(ec)
+	return err
+}
+
+func RegisterEntityClass(ec *IcEntityClass) *IcEntityClass {
+	if ec.ClassId == 0 {
+		err := insertNewEntityClass(ec)
+		if err != nil {
+			logger.Error("Failed to insert new entity class", zap.Error(err))
+		}
+		entityClassCache.Set(ec.ClassId, ec)
+		return ec
+	}
+
+	e, ok := entityClassCache.Get(ec.ClassId)
+	if ok {
+		return e
+	}
+	return nil
+}
+
+func GetEntityClass(classId uint32) (*IcEntityClass, error) {
+	if classId == 0 {
+		return nil, errors.New("classId is 0")
+	}
 	e, ok := entityClassCache.Get(classId)
 	if ok {
-		return e
+		return e, nil
 	}
-	e = &IcEntityClass{ClassId: classId}
-	ok, err := engine.Get(e)
+	ec := &IcEntityClass{ClassId: classId}
+	var err error
+	ok, err = engine.Get(ec)
 	if err != nil {
-		logger.Error("GetEntityClass", zap.Uint32("classId", classId), zap.Error(err))
-		return nil
+		logger.Error("Failed to get entity class", zap.Error(err))
+		return nil, err
 	}
-	entityClassCache.Set(classId, e)
-	return e
-}
-
-// AcquireEntityBase 以`ClassId,EntityUKey`进行插入或者查询对应的实体基信息
-// 当 EntityId 为 0，即尝试插入
-// 当 插入失败，则改为查询，如果查询不到，则返回 nil
-func AcquireEntityBase(base *IcEntityBase) *IcEntityBase {
-	if base.EntityId > 0 {
-		// query
-		engine.Get(base)
-		return base
-	} else {
-		_, err := engine.Insert(base)
-		if err != nil {
-			logger.Warn("AcquireEntityBase insert entity.EntityId !=0,use QueryEntityBaseByClsIdAndUKey to query ",
-				zap.Any("before entity:", base), zap.Error(err))
-			ok, err := engine.Get(base)
-			if err != nil {
-				logger.Error("AcquireEntityBase query", zap.Any("before entity:", base), zap.Error(err))
-			}
-			if ok {
-				logger.Warn("AcquireEntityBase query", zap.Any("queried entity:", base))
-				return base
-			}
-		}
-	}
-	return nil
-}
-
-func QueryEntityBaseByClsIdAndUKey(clsId uint32, ukey string) *IcEntityBase {
-	// // clsId=0的情况下 导致只会用EntityUKey去查询
-	if clsId == 0 {
-		clsId = math.MaxUint32
-	}
-	e := &IcEntityBase{
-		ClassId:    clsId,
-		EntityUKey: ukey,
-	}
-	ok, err := engine.Get(e)
 	if ok {
-		return e
+		entityClassCache.Set(ec.ClassId, ec)
+		return ec, nil
 	}
-	if err != nil {
-		logger.Warn("QueryEntityBaseByClsIdAndUKey", zap.Any("entity", e), zap.Error(err))
-	}
-	return nil
+	return nil, errors.New(fmt.Sprintf("entity classId:%d not found", classId))
 }
