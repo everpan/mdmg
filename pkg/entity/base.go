@@ -17,17 +17,18 @@ type IcEntityClass struct {
 	ClassName      string `xorm:"unique"`
 	ClassDesc      string `xorm:"text"` // 关于实体的描述信息
 	EntityPKColumn string `json:"entity_pk_column" xorm:"entity_pk_column index"`
-	EntityUKColumn string `json:"entity_uk_column" xorm:"entity_uk_column index"` // 实体主键列名;统一实体的列类型为uint64，可以采用数据库自增
+	// EntityUKColumn string `json:"entity_uk_column" xorm:"entity_uk_column index"` // 实体主键列名;统一实体的列类型为uint64，可以采用数据库自增
 	// EntityPrimaryTable string           `xorm:"entity_primary_table unique"`
-	ClusterIdList []uint32 `json:"cluster_id_list,omitempty" xorm:"text default ''"` // 属性表，第一个为主属性表; 所以的簇属性必需包含与`EntityPKColumn`同名的主键字段
+	ClusterIdList []uint32 `json:"cluster_id_list,omitempty" xorm:"cluster_id_list text default ''"` // 属性表，第一个为主属性表; 所以的簇属性必需包含与`EntityPKColumn`同名的主键字段
 }
 
 type IcClusterTable struct {
-	ClusterId        uint32 // 簇表名
+	ClusterId        uint32 `xorm:"pk autoincr notnull"` // 簇表名
 	ClusterName      string // 簇名
 	ClassId          uint32 `xorm:"index"`  // 所属实体类
 	ClusterDesc      string `xorm:"text"`   // 簇描述
 	ClusterTableName string `xorm:"unique"` // unique 簇表名； 至少包含EntityPKColumn
+	IsPrimary        bool   `xorm:"bool"`   // 是否是主簇，主簇的key通常是自增
 }
 
 var (
@@ -136,33 +137,9 @@ func (ctx *Context) AddClusterTableWithoutCheckClassId(ct *IcClusterTable) error
 		return fmt.Errorf("clusterId:%d is not 0, pls use GetClusterTable to get details", ct.ClusterId)
 	}
 	var (
-		err    error
-		ec     *IcEntityClass
-		ecCopy *IcEntityClass
+		err error
 	)
 	_, err = ctx.engine.Insert(ct)
-	if err != nil {
-		return err
-	}
-	ec, err = ctx.GetEntityClass(ct.ClassId)
-	if err != nil {
-		logger.Error("Failed to get entity class", zap.Error(err))
-		return err
-	}
-	ecCopy, err = ctx.GetEntityClassByName(ec.ClassName) // from db
-	if err != nil {
-		return err
-	}
-	if ecCopy.ClusterIdList == nil {
-		ecCopy.ClusterIdList = []uint32{}
-	}
-	ecCopy.ClusterIdList = append(ecCopy.ClusterIdList, ct.ClusterId)
-	// update to db
-	_, err = ctx.engine.Update(ecCopy, &IcEntityClass{ClassId: ct.ClusterId})
-	if err == nil {
-		// 更新db成功，更新cache；竞争锁？
-		ec.ClusterIdList = append(ec.ClusterIdList, ct.ClusterId)
-	}
 	return err
 }
 
@@ -174,5 +151,23 @@ func (ctx *Context) AddClusterTable(ct *IcClusterTable) error {
 	if ct.ClassId == 0 {
 		return errors.New("classId is 0")
 	}
-	return ctx.AddClusterTableWithoutCheckClassId(ct)
+
+	ec, err1 := ctx.GetEntityClass(ct.ClassId)
+	if nil != err1 {
+		return err1
+	}
+
+	err := ctx.AddClusterTableWithoutCheckClassId(ct)
+	if nil != err {
+		return err
+	}
+	// update db
+	// ec from cache; it was changed at the same time
+	ec.ClusterIdList = append(ec.ClusterIdList, ct.ClusterId)
+	_, err = ctx.engine.ID(ec.ClassId).Cols("cluster_id_list").Update(ec)
+
+	// update cache 直接被更新，是否有竞争问题？
+	// 处理起来比较麻烦，这个属于低频操作；先不处理
+	// 这里隐藏一个问题，就是当update db 出新问题； cache将与db不一致
+	return err
 }
