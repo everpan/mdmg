@@ -74,8 +74,7 @@ func TestGetEntityClass(t *testing.T) {
 func TestRegisterEntityClass(t *testing.T) {
 	// tearDown()
 	ctx := setUp("register_entity_class")
-	ec := &IcEntityClass{0, "user", "user info 1",
-		"user_id", []uint32{}}
+	ec := &IcEntityClass{0, "user", "user info 1", "user_id"}
 	e2 := *ec
 	e2Want := e2
 	e2Want.ClassId = 1
