@@ -23,9 +23,9 @@ type IcEntityClass struct {
 }
 
 type IcClusterTable struct {
+	ClassId          uint32 `xorm:"index"`               // 所属实体类
 	ClusterId        uint32 `xorm:"pk autoincr notnull"` // 簇表名
 	ClusterName      string // 簇名
-	ClassId          uint32 `xorm:"index"`  // 所属实体类
 	ClusterDesc      string `xorm:"text"`   // 簇描述
 	ClusterTableName string `xorm:"unique"` // unique 簇表名； 至少包含EntityPKColumn
 	IsPrimary        bool   `xorm:"bool"`   // 是否是主簇，主簇的key通常是自增
@@ -149,14 +149,12 @@ func (ctx *Context) AddClusterTable(ct *IcClusterTable) error {
 		return errors.New("classId is 0")
 	}
 
-	ec, err1 := ctx.GetEntityClass(ct.ClassId)
-	if nil != err1 {
-		return err1
+	ec, err := ctx.GetEntityClass(ct.ClassId)
+	if nil != err || ec == nil {
+		return fmt.Errorf("entity classId:%d not found, err: %v ,entity:%v",
+			ct.ClassId, err, ec)
 	}
-	if ec == nil {
-		return fmt.Errorf("entity classId:%d not found", ct.ClassId)
-	}
-	return nil
+	return ctx.AddClusterTableWithoutCheckClassId(ct)
 }
 
 func (ctx *Context) GetClusterTables(classId uint32) ([]*IcClusterTable, error) {
