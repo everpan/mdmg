@@ -13,7 +13,7 @@ import (
 	"xorm.io/xorm/log"
 )
 
-var _ctx = &Ctx{}
+var _ctx = &Context{}
 var testDbFilename = "xorm_test.db"
 
 func setup() {
@@ -29,7 +29,7 @@ func setup() {
 	// _ctx := &Ctx{db: eng}
 	_ctx.SetEngine(eng)
 	iso := v8.NewIsolate()
-	obj := ExportXormObject(_ctx, iso)
+	obj := ExportXormObject(_ctx.db, iso)
 	_ctx.SetV8Ctx(v8.NewContext(iso, obj))
 
 	buildTestData()

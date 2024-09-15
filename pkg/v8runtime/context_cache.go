@@ -1,4 +1,4 @@
-package handler
+package v8runtime
 
 import (
 	"github.com/everpan/mdmg/pkg/store"
@@ -24,17 +24,12 @@ func AcquireContext(fc *fiber.Ctx) (*Context, error) {
 			e := errors.NewBadRequest("tenantSid:" + tenantSid + " not found")
 			return nil, e
 		}
-		engine, err := tenant.AcquireEngine(info)
+		engine, err := tenant.AcquireTenantEngine(info)
 		if nil != err {
 			e := errors.NewBadRequest("can not acquire engine for tenantSid:" + tenantSid + ",error:" + err.Error())
 			return nil, e
 		}
-		ctx = &Context{
-			fc:     fc,
-			tenant: info,
-			db:     engine,
-		}
-		ctx.CreateV8Context()
+		ctx = NewContextWithParams(fc, info, nil, engine, "")
 		cache.Set(tenantSid, ctx)
 	}
 	return ctx, nil

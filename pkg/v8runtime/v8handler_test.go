@@ -1,4 +1,4 @@
-package handler
+package v8runtime
 
 import (
 	"github.com/everpan/mdmg/pkg/log"
@@ -61,11 +61,14 @@ var wantInternalServerError = func(msg string) func(*testing.T, *http.Response, 
 }
 
 func InitTable(e *xorm.Engine) {
-	e.Table(tenant.InfoTableName).CreateTable(&tenant.Info{})
+	err := e.CreateTables(&tenant.IcTenantInfo{})
+	if err != nil {
+		panic(err)
+	}
 	DefaultInfo := tenant.DefaultInfo
 	DefaultInfo.Driver = "sqlite3"
 	DefaultInfo.ConnectString = "./v8handler_test.db"
-	_, err := e.Table(tenant.InfoTableName).Insert(&DefaultInfo, &tenant.DefaultHostInfo)
+	_, err = e.Insert(DefaultInfo, tenant.DefaultHostInfo)
 	if err != nil {
 		log.GetLogger().Error("insert 111...", zap.Error(err))
 	}
@@ -101,14 +104,15 @@ func TestIcodeHandler(t *testing.T) {
 	}
 	app := fiber.New()
 	AppRouterAdd(app, &ICoderHandler)
-	config.DefaultConfig.JSModuleRootPath = "../script_module"
-	defer os.Remove("./v8handler_test.db")
+	config.DefaultConfig.JSModuleRootPath = "../../web/script_module"
+	_ = os.Remove("./v8handler_test.db")
 	var defaultEngin, err = xorm.NewEngine("sqlite3", "./v8handler_test.db")
 	if err != nil {
 		t.Fatal(err)
 	}
 	tenant.SetEngine(defaultEngin)
 	InitTable(defaultEngin)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			target := "/v1/icode/test-0.1.0/" + strings.TrimSpace(tt.scriptFileName)

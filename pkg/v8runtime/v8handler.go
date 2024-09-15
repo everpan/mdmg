@@ -1,4 +1,4 @@
-package handler
+package v8runtime
 
 import (
 	"errors"
@@ -13,25 +13,31 @@ import (
 	"strings"
 )
 
+var ICoderHandler = MyHandlerExport{
+	Path:    "/v1/icode/:modVer/:jsFile/*",
+	Handler: icodeHandler,
+}
+
 func icodeHandler(ctx *Context) error {
-	fc := ctx.fc
-	ctx.ModuleVersion = fc.Params("modVer")
+	fc := ctx.FiberCtx()
+	movVer := fc.Params("modVer")
+	ctx.SetModuleVersion(movVer)
 	fName := fc.Params("jsFile")
 	subFile := fc.Params("*1")
 	var shortFileName string
 	if len(subFile) == 0 {
-		shortFileName = filepath.Join(ctx.ModuleVersion, config.DefaultConfig.JSModuleBeckEndDir, fName+".js")
+		shortFileName = filepath.Join(movVer, config.DefaultConfig.JSModuleBeckEndDir, fName+".js")
 	} else {
 		subs := strings.Split(subFile, "/")
 		substr := filepath.Join(subs...)
-		shortFileName = filepath.Join(ctx.ModuleVersion, config.DefaultConfig.JSModuleBeckEndDir, fName, substr+".js")
+		shortFileName = filepath.Join(movVer, config.DefaultConfig.JSModuleBeckEndDir, fName, substr+".js")
 	}
 	var err error
 	var r1, r2, output *v8.Value
 	r1, err = runScriptByFileShortName(ctx, shortFileName)
 	if err == nil {
 		defer r1.Release()
-		r2, err = runMethodScript(fc.Method(), r1, ctx.v8Ctx)
+		r2, err = runMethodScript(fc.Method(), r1, ctx.V8Ctx())
 		if err == nil {
 			defer r2.Release()
 			var o *v8.Object
@@ -43,7 +49,7 @@ func icodeHandler(ctx *Context) error {
 						err = errors.New("output object is not found in response")
 					} else {
 						var gv any
-						gv, err = utils.ToGoValue(ctx.v8Ctx, output)
+						gv, err = utils.ToGoValue(ctx.V8Ctx(), output)
 						if err == nil {
 							resp := ICodeResponse{
 								Code: 0,
@@ -95,4 +101,8 @@ func runMethodScript(method string, script *v8.Value, ctx *v8.Context) (*v8.Valu
 		return nil, errors.New(fmt.Sprintf("not found the handler of method(%v), %v", method, e.Error()))
 	}
 	return methodFun.Call(ctx.Global())
+}
+
+func AppRouterAdd(router fiber.Router, h *MyHandlerExport) {
+	router.Group(h.Path, h.Handler.WrapHandler())
 }

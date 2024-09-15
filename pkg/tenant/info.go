@@ -11,7 +11,7 @@ import (
 
 const DefaultGuidNamespace = "11111111-1111-1111-1111-111111111111"
 
-type Info struct {
+type IcTenantInfo struct {
 	Idx           uint32 `json:"idx" xorm:"tenant_id pk autoincr"`
 	SId           string `json:"sid" xorm:"sid char(36) notnull unique"`
 	En            string `json:"en" xorm:"varchar(64) notnull unique"` // 英文名称，用于登录，区分租户
@@ -25,30 +25,18 @@ type Info struct {
 }
 
 var (
-	cache               = store.OneLevelMap[string, *Info]{}
+	cache               = store.OneLevelMap[string, *IcTenantInfo]{}
 	namespace           guid.GUID
-	defaultSystemEngine *xorm.Engine
+	defaultSystemEngine *xorm.Engine // 租户管理为最高权限，运营商才可
 	engineCache         = store.OneLevelMap[string, *xorm.Engine]{}
 )
 
 var (
-	DefaultInfo = Info{
-		Idx:       1,
-		SId:       DefaultGuidNamespace,
-		En:        "default_test",
-		Cn:        "默认租户",
-		IsTestEnv: true,
-	}
-	DefaultHostInfo = Info{
-		Idx:    2,
-		SId:    "22222222-2222-2222-2222-222222222222",
-		En:     "host",
-		Cn:     "运营商",
-		IsHost: true,
-	}
+	DefaultInfo = NewTenantInfo(uint32(1),
+		DefaultGuidNamespace, "default_test", "默认租户", "", false)
+	DefaultHostInfo = NewTenantInfo(uint32(2),
+		"22222222-2222-2222-2222-222222222222", "host", "运营商", "", true)
 )
-
-const InfoTableName = "ic_tenant_info"
 
 func SetEngine(e *xorm.Engine) {
 	defaultSystemEngine = e
@@ -56,19 +44,21 @@ func SetEngine(e *xorm.Engine) {
 
 func init() {
 	namespace, _ = guid.FromString(DefaultGuidNamespace)
+	DefaultInfo.SId = DefaultGuidNamespace
+	DefaultHostInfo.SId = "22222222-2222-2222-2222-222222222222"
 }
 
-func NewTenantInfo(sid string, en string, cn string, extension string, isTest bool) *Info {
-	id, _ := guid.NewV5(namespace, []byte(sid))
-	return &Info{
-		Idx: 0,
-		SId: id.String(),
+func NewTenantInfo(idx uint32, sid string, en string, cn string, extension string, isTest bool) *IcTenantInfo {
+	gid, _ := guid.NewV5(namespace, []byte(sid))
+	return &IcTenantInfo{
+		Idx: idx,
+		SId: gid.String(),
 		En:  en, Cn: cn, IsTestEnv: isTest,
 		Extension: extension,
 	}
 }
 
-func (tenant *Info) SaveTenantInfo() error {
+func (tenant *IcTenantInfo) SaveTenantInfo() error {
 	var err error
 	if tenant.Idx == 0 {
 		_, err = defaultSystemEngine.Insert(tenant)
@@ -78,17 +68,17 @@ func (tenant *Info) SaveTenantInfo() error {
 	return err
 }
 
-func AcquireTenantInfoBySid(sid string) (*Info, error) {
+func AcquireTenantInfoBySid(sid string) (*IcTenantInfo, error) {
 	info, ok := cache.Get(sid)
 	if ok {
 		return info, nil
 	}
-	info = &Info{SId: sid}
+	info = &IcTenantInfo{SId: sid}
 	var err error
 	if nil == defaultSystemEngine {
 		return nil, errors.New("default system engine is null")
 	}
-	ok, err = defaultSystemEngine.Table(InfoTableName).Get(info)
+	ok, err = defaultSystemEngine.Get(info)
 	if ok {
 		cache.Set(sid, info)
 		return info, nil
@@ -99,7 +89,7 @@ func AcquireTenantInfoBySid(sid string) (*Info, error) {
 	return nil, err
 }
 
-func AcquireEngine(info *Info) (*xorm.Engine, error) {
+func AcquireTenantEngine(info *IcTenantInfo) (*xorm.Engine, error) {
 	driver, connStr := info.Driver, info.ConnectString
 	eng, ok := engineCache.Get(connStr)
 	if ok {

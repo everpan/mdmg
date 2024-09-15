@@ -1,12 +1,13 @@
 package v8runtime
 
 import (
+	"net/http/httptest"
+	"testing"
+
 	"github.com/everpan/mdmg/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
-	"net/http/httptest"
 	v8 "rogchap.com/v8go"
-	"testing"
 )
 
 func TestExportObject(t *testing.T) {
@@ -15,14 +16,16 @@ func TestExportObject(t *testing.T) {
 		path   string
 		target string
 		script string
-		want   func(ctx *Ctx, value *v8.Value) bool
+		want   func(ctx *Context, value *v8.Value) bool
 	}{
-		{"undefined", "", "/", "", func(ctx *Ctx, value *v8.Value) bool {
+		{"undefined", "", "/", "", func(ctx *Context, value *v8.Value) bool {
 			// logger.Info("run", zap.Any("val", value))
 			return value.String() == "undefined"
 		}},
 		{"global object", "/test/:p1/:p2/*", "/test/a/:b/c/d",
-			`(() => {
+			`
+let icode = __ic.ctx
+(() => {
 let accept = icode.header().Accept
 return {
 	code: 0,
@@ -39,8 +42,8 @@ return {
 	base: icode.baseURL(),
 	originURL: icode.originURL()
 }
-})()`, func(ctx *Ctx, value *v8.Value) bool {
-				gv, _ := utils.ToGoValue(ctx.V8Context(), value)
+})()`, func(ctx *Context, value *v8.Value) bool {
+				gv, _ := utils.ToGoValue(ctx.V8Ctx(), value)
 				// logger.Info("run", zap.Any("val", gv), zap.String("type", reflect.TypeOf(gv).String()))
 				jv0 := gv.(map[string]interface{})
 				params := jv0["params"].(map[string]any)
@@ -54,10 +57,8 @@ return {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			app := fiber.New()
-			// defer app.Shutdown()
-			// defer DisposeCtxPool()
 			app.Get(tt.path, func(c *fiber.Ctx) error {
-				ctx := AcquireCtx(c)
+				ctx := NewContextWithParams(c, nil, nil, nil, "")
 				val, err := ctx.RunScript(tt.script, "test.js")
 				assert.Nil(t, err)
 				assert.True(t, tt.want(ctx, val))

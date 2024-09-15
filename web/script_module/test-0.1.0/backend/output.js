@@ -1,5 +1,6 @@
-let ctx = __ic.ctx
 get = () => {
+    // 放置外围，会导致变量不允许重复声明错误
+    let ctx = __ic.ctx
     return {
         output: { // 输出结果
             headers: ctx.header(),
