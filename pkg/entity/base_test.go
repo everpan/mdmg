@@ -120,7 +120,7 @@ func TestRegisterEntityClass(t *testing.T) {
 }
 
 var (
-	primaryTable = &dsl.Meta{Table: dsl.Table{Name: "a"}, Columns: []*dsl.Column{{Name: "a1"}, {Name: "idx", IsPrimaryKey: true}}}
+	primaryTable = &dsl.Meta{Table: dsl.Table{Name: "p"}, Columns: []*dsl.Column{{Name: "a1"}, {Name: "idx", IsPrimaryKey: true}}}
 	data         = []*dsl.Meta{
 		{Table: dsl.Table{Name: "a"}, Columns: []*dsl.Column{{Name: "a1"}}},
 		{Table: dsl.Table{Name: "b"}, Columns: []*dsl.Column{{Name: "a1"}, {Name: "a2"}}},
@@ -199,6 +199,52 @@ func TestGenerateSelectColumnsSQL(t *testing.T) {
 			if nil != err && tt.wantErr != "" {
 				assert.Containsf(t, err.Error(), tt.wantErr, "GenerateSelectColumnSQL(%v, %v)", tt.primaryTables, tt.clusterTables)
 			}
+		})
+	}
+}
+
+func TestGenerateJoinTableSQL(t *testing.T) {
+	tests := []struct {
+		name          string
+		primaryTables *dsl.Meta
+		clusterTables []*dsl.Meta
+		want          string
+		wantErr       string
+	}{
+		{"no primary key", data[0], data, "", "not fount primary key in table"},
+		{"only primary table", primaryTable, nil,
+			`select t0.idx, t0.a1
+from p as t0`, ""},
+		{"2nd table aliased", primaryTable, data[0:1],
+			`select t0.idx, t0.a1,
+t1.a1 as a1_1
+from p as t0
+left join a as t1 on t0.idx = t1.idx`, ""},
+		{"3rd table aliased", primaryTable, data[0:2],
+			`select t0.idx, t0.a1,
+t1.a1 as a1_1,
+t2.a1 as a1_2, t2.a2
+from p as t0
+left join a as t1 on t0.idx = t1.idx
+left join b as t2 on t0.idx = t2.idx`, ""},
+		{"4th table aliased", primaryTable, data[0:3],
+			`select t0.idx, t0.a1,
+t1.a1 as a1_1,
+t2.a1 as a1_2, t2.a2 as a2_2,
+t3.a1 as a1_3, t3.a2 as a2_3, t3.a3
+from p as t0
+left join a as t1 on t0.idx = t1.idx
+left join b as t2 on t0.idx = t2.idx
+left join c as t3 on t0.idx = t3.idx`, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GenerateJoinTableSQL(tt.primaryTables, tt.clusterTables)
+			assert.Equalf(t, tt.want, got, "GenerateJoinTableSQL(%v, %v)", tt.primaryTables, tt.clusterTables)
+			if nil != err && tt.wantErr != "" {
+				assert.Containsf(t, err.Error(), tt.wantErr, "GenerateJoinTableSQL(%v, %v)", tt.primaryTables, tt.clusterTables)
+			}
+
 		})
 	}
 }

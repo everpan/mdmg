@@ -240,8 +240,12 @@ func filterRepeatedColumns(primaryTables *dsl.Meta, clusterTables []*dsl.Meta) m
 	}
 	return result
 }
-
 func GenerateSelectColumnsSQL(primaryTables *dsl.Meta, clusterTables []*dsl.Meta) (string, error) {
+	var sb strings.Builder
+	_, err := GenerateSelectColumnsSQLBuilder(&sb, primaryTables, clusterTables)
+	return sb.String(), err
+}
+func GenerateSelectColumnsSQLBuilder(sb *strings.Builder, primaryTables *dsl.Meta, clusterTables []*dsl.Meta) (string, error) {
 	var key string
 	for _, col := range primaryTables.Columns {
 		if col.IsPrimaryKey {
@@ -249,17 +253,13 @@ func GenerateSelectColumnsSQL(primaryTables *dsl.Meta, clusterTables []*dsl.Meta
 			break
 		}
 	}
-	for _, clusterTable := range clusterTables {
-		fmt.Printf("table info %v | %v\n", clusterTable.Table, clusterTable.Columns)
-	}
 
 	if key == "" {
-		return "", fmt.Errorf("not fount primary key in table %s", primaryTables.Table.Name)
+		return key, fmt.Errorf("not fount primary key in table %s", primaryTables.Table.Name)
 	}
 	// allTables := append(clusterTables, primaryTables)
 	repeatedCols := filterRepeatedColumns(primaryTables, clusterTables)
 	var exist bool
-	var sb strings.Builder
 	sb.WriteString("select t0.")
 	sb.WriteString(key)
 	for _, col := range primaryTables.Columns {
@@ -269,18 +269,18 @@ func GenerateSelectColumnsSQL(primaryTables *dsl.Meta, clusterTables []*dsl.Meta
 		sb.WriteString(", t0.")
 		sb.WriteString(col.Name)
 	}
-	// sb.WriteString("\n")
-	fmt.Printf("tables %v\n", clusterTables)
+
+	if clusterTables != nil {
+		sb.WriteString(",\n")
+	}
+
 	for i, clusterTable := range clusterTables {
 		var tIdx = strconv.Itoa(i + 1)
 		var aliasTableDot = "t" + tIdx + "."
-		sb.WriteString("\n")
-		fmt.Printf("%d table %s, col num: %v\n", i, clusterTable.Table.Name, len(clusterTable.Columns))
-		for _, col := range clusterTable.Columns {
+		for j, col := range clusterTable.Columns {
 			if col.Name == key {
 				continue
 			}
-			sb.WriteString(", ")
 			sb.WriteString(aliasTableDot)
 			sb.WriteString(col.Name)
 			_, exist = repeatedCols[col.Name]
@@ -289,32 +289,62 @@ func GenerateSelectColumnsSQL(primaryTables *dsl.Meta, clusterTables []*dsl.Meta
 				sb.WriteString(" as ")
 				sb.WriteString(aliasCol)
 			}
+			if j < len(clusterTable.Columns)-1 {
+				sb.WriteString(", ")
+			}
+		}
+		if i < len(clusterTables)-1 {
+			sb.WriteString(",\n")
 		}
 	}
-	return sb.String(), nil
+	return key, nil
 }
 
 // GenerateLeftJoinSQL 将多个簇表left join起来
 func GenerateLeftJoinSQL(clusterTables []*dsl.Meta, key string) string {
-	if nil == clusterTables {
-		return ""
-	}
 	var sb strings.Builder
+	GenerateLeftJoinConditionSQLBuilder(&sb, clusterTables, key)
+	return sb.String()
+}
+
+func GenerateLeftJoinConditionSQLBuilder(sb *strings.Builder, clusterTables []*dsl.Meta, key string) {
+	if nil == clusterTables {
+		return
+	}
 	for i, table := range clusterTables {
 		alias := strconv.Itoa(i + 1)
-		sb.WriteString("\nleft join ")
+		if i == 0 {
+			sb.WriteString("left join ")
+		} else {
+			sb.WriteString("\nleft join ")
+		}
 		sb.WriteString(table.Table.Name)
 		sb.WriteString(" as t")
 		sb.WriteString(alias)
 		sb.WriteString(" on t0")
 		sb.WriteString(".")
 		sb.WriteString(key)
-		sb.WriteString("=t")
+		sb.WriteString(" = t")
 		sb.WriteString(alias)
 		sb.WriteString(".")
 		sb.WriteString(key)
 	}
-	return sb.String()
+}
+
+func GenerateJoinTableSQL(primaryTables *dsl.Meta, clusterTables []*dsl.Meta) (string, error) {
+	var sb strings.Builder
+	key, err := GenerateSelectColumnsSQLBuilder(&sb, primaryTables, clusterTables)
+	if nil != err {
+		return "", err
+	}
+	sb.WriteString("\nfrom ")
+	sb.WriteString(primaryTables.Table.Name)
+	sb.WriteString(" as t0")
+	if clusterTables != nil {
+		sb.WriteString("\n")
+	}
+	GenerateLeftJoinConditionSQLBuilder(&sb, clusterTables, key)
+	return sb.String(), nil
 }
 
 func FilterPrimaryClusterTable(tables []*IcClusterTable) *IcClusterTable {
