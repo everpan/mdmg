@@ -3,6 +3,9 @@ package entity
 import (
 	"errors"
 	"fmt"
+	"github.com/everpan/mdmg/dsl"
+	"strconv"
+	"strings"
 
 	"github.com/everpan/mdmg/pkg/log"
 	"github.com/everpan/mdmg/pkg/store"
@@ -22,6 +25,9 @@ type IcEntityClass struct {
 	// ClusterIdList []uint32 `json:"cluster_id_list,omitempty" xorm:"cluster_id_list text default ''"` // 属性表，第一个为主属性表; 所以的簇属性必需包含与`EntityPKColumn`同名的主键字段
 }
 
+// IcClusterTable 簇表信息
+// 多个簇表通过left join 进行查询，根据需求定制
+// classId : clusterId = 1 : n
 type IcClusterTable struct {
 	ClassId          uint32 `xorm:"index"`               // 所属实体类
 	ClusterId        uint32 `xorm:"pk autoincr notnull"` // 簇表名
@@ -173,6 +179,142 @@ func (ctx *Context) GetPrimaryClusterTable(classId uint32) (*IcClusterTable, err
 		return table, nil
 	}
 	return nil, nil
+}
+
+// CreateViewTable 以主表将所有簇表构建成view试图
+func (ctx *Context) CreateViewTable(classId uint32, force bool) error {
+	cTables, err := ctx.GetClusterTables(classId)
+	if nil != err {
+		return err
+	}
+	var primaryTable string
+	var tNames []string
+
+	for _, table := range cTables {
+		if table.IsPrimary {
+			primaryTable = table.ClusterTableName
+			continue
+		}
+		tNames = append(tNames, table.ClusterTableName)
+	}
+	if len(primaryTable) == 0 {
+		return fmt.Errorf("primary table is empty of classId:%d", classId)
+	}
+
+	viewTableName := fmt.Sprintf(`v_cls_%s`, primaryTable)
+	_, err = ctx.engine.Exec("drop view if exists " + viewTableName)
+	if err != nil {
+		return err
+	}
+	if len(tNames) == 0 { // 没有非簇表
+		_, err = ctx.engine.Exec("create view " + viewTableName)
+	} else {
+		_, err = ctx.engine.Exec("creat view " + viewTableName)
+	}
+
+	return nil
+}
+
+type void struct{}
+
+// filterRepeatedColumns 获取簇表中相同列名
+func filterRepeatedColumns(primaryTables *dsl.Meta, clusterTables []*dsl.Meta) map[string]void {
+	var tmp = make(map[string]int)
+	if primaryTables != nil {
+		for _, col := range primaryTables.Columns {
+			tmp[col.Name] += 1
+		}
+	}
+
+	for _, clusterTable := range clusterTables {
+		for _, col := range clusterTable.Columns {
+			tmp[col.Name] += 1
+		}
+	}
+	var result = make(map[string]void)
+	var empty = void{}
+	for colName, cnt := range tmp {
+		if cnt > 1 {
+			result[colName] = empty
+		}
+	}
+	return result
+}
+
+func GenerateSelectColumnsSQL(primaryTables *dsl.Meta, clusterTables []*dsl.Meta) (string, error) {
+	var key string
+	for _, col := range primaryTables.Columns {
+		if col.IsPrimaryKey {
+			key = col.Name
+			break
+		}
+	}
+	for _, clusterTable := range clusterTables {
+		fmt.Printf("table info %v | %v\n", clusterTable.Table, clusterTable.Columns)
+	}
+
+	if key == "" {
+		return "", fmt.Errorf("not fount primary key in table %s", primaryTables.Table.Name)
+	}
+	// allTables := append(clusterTables, primaryTables)
+	repeatedCols := filterRepeatedColumns(primaryTables, clusterTables)
+	var exist bool
+	var sb strings.Builder
+	sb.WriteString("select t0.")
+	sb.WriteString(key)
+	for _, col := range primaryTables.Columns {
+		if col.IsPrimaryKey {
+			continue
+		}
+		sb.WriteString(", t0.")
+		sb.WriteString(col.Name)
+	}
+	// sb.WriteString("\n")
+	fmt.Printf("tables %v\n", clusterTables)
+	for i, clusterTable := range clusterTables {
+		var tIdx = strconv.Itoa(i + 1)
+		var aliasTableDot = "t" + tIdx + "."
+		sb.WriteString("\n")
+		fmt.Printf("%d table %s, col num: %v\n", i, clusterTable.Table.Name, len(clusterTable.Columns))
+		for _, col := range clusterTable.Columns {
+			if col.Name == key {
+				continue
+			}
+			sb.WriteString(", ")
+			sb.WriteString(aliasTableDot)
+			sb.WriteString(col.Name)
+			_, exist = repeatedCols[col.Name]
+			if exist {
+				var aliasCol = col.Name + "_" + tIdx
+				sb.WriteString(" as ")
+				sb.WriteString(aliasCol)
+			}
+		}
+	}
+	return sb.String(), nil
+}
+
+// GenerateLeftJoinSQL 将多个簇表left join起来
+func GenerateLeftJoinSQL(clusterTables []*dsl.Meta, key string) string {
+	if nil == clusterTables {
+		return ""
+	}
+	var sb strings.Builder
+	for i, table := range clusterTables {
+		alias := strconv.Itoa(i + 1)
+		sb.WriteString("\nleft join ")
+		sb.WriteString(table.Table.Name)
+		sb.WriteString(" as t")
+		sb.WriteString(alias)
+		sb.WriteString(" on t0")
+		sb.WriteString(".")
+		sb.WriteString(key)
+		sb.WriteString("=t")
+		sb.WriteString(alias)
+		sb.WriteString(".")
+		sb.WriteString(key)
+	}
+	return sb.String()
 }
 
 func FilterPrimaryClusterTable(tables []*IcClusterTable) *IcClusterTable {
