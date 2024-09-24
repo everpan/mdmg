@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/everpan/mdmg/pkg/base/tenant"
 	"github.com/everpan/mdmg/pkg/base/v8runtime"
-	"github.com/everpan/mdmg/pkg/handler"
 	"github.com/everpan/mdmg/utils"
 	"github.com/gofiber/fiber/v2"
 	v8 "rogchap.com/v8go"
@@ -16,6 +15,11 @@ type IcPathHandler struct {
 	Handler IcHandler
 }
 
+type IcGroupPathHandler struct {
+	GroupPath string
+	Handlers  []*IcPathHandler
+}
+
 type IcHandler func(ctx *IcContext) error
 
 func (h IcHandler) WrapHandler() fiber.Handler {
@@ -25,7 +29,7 @@ func (h IcHandler) WrapHandler() fiber.Handler {
 			if ctx == nil {
 				err = fmt.Errorf("cannot acquire context: %v", fc.GetReqHeaders())
 			}
-			return handler.SendError(fc, fiber.StatusBadRequest, err)
+			return SendError(fc, fiber.StatusBadRequest, err)
 		}
 		ctx.fc = fc
 		return h(ctx)

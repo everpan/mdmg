@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/everpan/mdmg/pkg/base/log"
 	"github.com/everpan/mdmg/pkg/base/tenant"
+	"github.com/everpan/mdmg/pkg/ctx"
 	"github.com/everpan/mdmg/pkg/handler"
 	"github.com/gofiber/contrib/fgprof"
 	"github.com/gofiber/contrib/fiberzap/v2"
@@ -59,8 +60,8 @@ func CreateApp() *fiber.App {
 	app.Use(fgprof.New())
 
 	apiRouter := app.Group("/api")
-	handler.AppRouterAdd(apiRouter, &handler.ICoderHandler)
-	handler.AppRouterAdd(apiRouter, &handler.EntityHandler)
+	ctx.AppRouterAdd(apiRouter, &handler.ICoderHandler)
+	ctx.AppRouterAddMulti(apiRouter, handler.EntityHandlers)
 
 	staticConf := fiber.Static{
 		Compress:      true,

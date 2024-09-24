@@ -1,4 +1,4 @@
-package handler
+package ctx
 
 import (
 	"encoding/json"
@@ -21,7 +21,7 @@ func (resp *ICodeResponse) Marshal() (data []byte) {
 }
 
 func (resp *ICodeResponse) Unmarshal(data []byte) {
-	json.Unmarshal(data, resp)
+	_ = json.Unmarshal(data, resp)
 }
 
 func SendInternalServerError(fc *fiber.Ctx, err error) error {
@@ -30,7 +30,21 @@ func SendInternalServerError(fc *fiber.Ctx, err error) error {
 }
 
 func SendError(fc *fiber.Ctx, status int, e error) error {
-	fc.SendStatus(status)
+	_ = fc.SendStatus(status)
 	resp := NewICodeResponse(-1, e.Error(), nil)
 	return fc.Send(resp.Marshal())
+}
+
+func AppRouterAdd(router fiber.Router, h *IcPathHandler) {
+	router.Group(h.Path, h.Handler.WrapHandler())
+}
+
+func AppRouterAddMulti(router fiber.Router, handlers []*IcPathHandler) {
+	for _, handler := range handlers {
+		AppRouterAdd(router, handler)
+	}
+}
+func AppRouterAddGroup(app *fiber.App, g *IcGroupPathHandler) {
+	r := app.Group(g.GroupPath)
+	AppRouterAddMulti(r, g.Handlers)
 }

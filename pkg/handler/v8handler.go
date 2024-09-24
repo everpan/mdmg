@@ -19,10 +19,10 @@ var ICoderHandler = ctx.IcPathHandler{
 	Handler: icodeHandler,
 }
 
-func icodeHandler(ctx *ctx.IcContext) error {
-	fc := ctx.FiberCtx()
+func icodeHandler(c *ctx.IcContext) error {
+	fc := c.FiberCtx()
 	movVer := fc.Params("modVer")
-	ctx.SetModuleVersion(movVer)
+	c.SetModuleVersion(movVer)
 	fName := fc.Params("jsFile")
 	subFile := fc.Params("*1")
 	var shortFileName string
@@ -35,10 +35,10 @@ func icodeHandler(ctx *ctx.IcContext) error {
 	}
 	var err error
 	var r1, r2, output *v8.Value
-	r1, err = runScriptByFileShortName(ctx, shortFileName)
+	r1, err = runScriptByFileShortName(c, shortFileName)
 	if err == nil {
 		defer r1.Release()
-		r2, err = runMethodScript(fc.Method(), r1, ctx.V8Ctx())
+		r2, err = runMethodScript(fc.Method(), r1, c.V8Ctx())
 		if err == nil {
 			defer r2.Release()
 			var o *v8.Object
@@ -50,9 +50,10 @@ func icodeHandler(ctx *ctx.IcContext) error {
 						err = errors.New("output object is not found in response")
 					} else {
 						var gv any
-						gv, err = utils.ToGoValue(ctx.V8Ctx(), output)
+						gv, err = utils.ToGoValue(c.V8Ctx(), output)
 						if err == nil {
-							resp := ICodeResponse{
+
+							resp := ctx.ICodeResponse{
 								Code: 0,
 								Data: gv,
 							}
@@ -67,9 +68,9 @@ func icodeHandler(ctx *ctx.IcContext) error {
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			err = errors.New(fmt.Sprintf("can not find %v", shortFileName))
-			SendError(fc, fiber.StatusNotFound, err)
+			_ = ctx.SendError(fc, fiber.StatusNotFound, err)
 		} else {
-			return SendInternalServerError(fc, err)
+			return ctx.SendInternalServerError(fc, err)
 		}
 	}
 	return nil
@@ -102,8 +103,4 @@ func runMethodScript(method string, script *v8.Value, ctx *v8.Context) (*v8.Valu
 		return nil, errors.New(fmt.Sprintf("not found the handler of method(%v), %v", method, e.Error()))
 	}
 	return methodFun.Call(ctx.Global())
-}
-
-func AppRouterAdd(router fiber.Router, h *ctx.IcPathHandler) {
-	router.Group(h.Path, h.Handler.WrapHandler())
 }

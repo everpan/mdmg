@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/everpan/mdmg/pkg/base/log"
 	"github.com/everpan/mdmg/pkg/base/tenant"
+	"github.com/everpan/mdmg/pkg/ctx"
 	"github.com/everpan/mdmg/web/config"
 	"github.com/gofiber/fiber/v2"
 	_ "github.com/mattn/go-sqlite3"
@@ -21,7 +22,7 @@ type checkFun func(t *testing.T, r *http.Response, e error)
 
 var echoBody = func(t *testing.T, r *http.Response, e error) {
 	body, _ := io.ReadAll(r.Body)
-	ret := &ICodeResponse{}
+	ret := &ctx.ICodeResponse{}
 	ret.Unmarshal(body)
 	t.Log("body", string(body))
 	t.Log(ret)
@@ -30,7 +31,7 @@ var echoBody = func(t *testing.T, r *http.Response, e error) {
 var contains = func(code int, msg string) checkFun {
 	return func(t *testing.T, r *http.Response, e error) {
 		body, _ := io.ReadAll(r.Body)
-		ret := &ICodeResponse{}
+		ret := &ctx.ICodeResponse{}
 		ret.Unmarshal(body)
 		// t.Log("body", string(body), ret)
 		assert.Equal(t, code, ret.Code)
@@ -52,7 +53,7 @@ var wantInternalServerError = func(msg string) func(*testing.T, *http.Response, 
 			t.Error(err)
 		}
 		body, _ := io.ReadAll(res.Body)
-		ret := &ICodeResponse{}
+		ret := &ctx.ICodeResponse{}
 		ret.Unmarshal(body)
 		assert.Nilf(t, err, "body: %v", string(body))
 		assert.Equal(t, fiber.StatusInternalServerError, res.StatusCode)
@@ -103,7 +104,7 @@ func TestIcodeHandler(t *testing.T) {
 			contains(0, "tenant_info\":{")},
 	}
 	app := fiber.New()
-	AppRouterAdd(app, &ICoderHandler)
+	ctx.AppRouterAdd(app, &ICoderHandler)
 	config.DefaultConfig.JSModuleRootPath = "../../web/script_module"
 	_ = os.Remove("./v8handler_test.db")
 	var defaultEngin, err = xorm.NewEngine("sqlite3", "./v8handler_test.db")
