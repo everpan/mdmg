@@ -8,10 +8,10 @@ import (
 )
 
 var (
-	cache store.OneLevelMap[string, *Context]
+	cache store.OneLevelMap[string, *IcContext]
 )
 
-func AcquireContext(fc *fiber.Ctx) (*Context, error) {
+func AcquireContext(fc *fiber.Ctx) (*IcContext, error) {
 	tenantSid := fc.GetRespHeader("X-Tenant-Sid", tenant.DefaultGuidNamespace)
 	ctx, ok := cache.Get(tenantSid)
 	if !ok {

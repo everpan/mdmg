@@ -20,6 +20,7 @@ type IcEntityClass struct {
 	ClassName      string `xorm:"unique"`
 	ClassDesc      string `xorm:"text"` // 关于实体的描述信息
 	EntityPKColumn string `json:"entity_pk_column" xorm:"entity_pk_column index"`
+	TenantId       uint32 `xorm:"index"`
 	// EntityUKColumn string `json:"entity_uk_column" xorm:"entity_uk_column index"` // 实体主键列名;统一实体的列类型为uint64，可以采用数据库自增
 	// EntityPrimaryTable string           `xorm:"entity_primary_table unique"`
 	// ClusterIdList []uint32 `json:"cluster_id_list,omitempty" xorm:"cluster_id_list text default ''"` // 属性表，第一个为主属性表; 所以的簇属性必需包含与`EntityPKColumn`同名的主键字段
@@ -35,6 +36,8 @@ type IcClusterTable struct {
 	ClusterDesc      string `xorm:"text"`   // 簇描述
 	ClusterTableName string `xorm:"unique"` // unique 簇表名； 至少包含EntityPKColumn
 	IsPrimary        bool   `xorm:"bool"`   // 是否是主簇，主簇的key通常是自增
+	TenantId         uint32 `xorm:"index"`
+	Status           int32  `xorm:"index""` // 状态
 }
 
 var (
@@ -93,7 +96,6 @@ func (ctx *Context) RegisterEntityClass(ec *IcEntityClass) (*IcEntityClass, erro
 }
 
 // RegisterClassName 注册实体类名，其他信息后续补充，否则不能工作；主要简化工作
-
 func (ctx *Context) RegisterClassName(className string) (*IcEntityClass, error) {
 	ec := &IcEntityClass{ClassName: className}
 	return ctx.RegisterEntityClass(ec)
@@ -148,8 +150,8 @@ func (ctx *Context) AddClusterTableWithoutCheckClassId(ct *IcClusterTable) error
 
 // AddClusterTable 增加簇表
 // 条件 ： classId > 0     存在实体类
-//		  ClusterId == 0  簇类为新
-
+//
+//	ClusterId == 0  簇类为新
 func (ctx *Context) AddClusterTable(ct *IcClusterTable) error {
 	if ct.ClassId == 0 {
 		return errors.New("classId is 0")
@@ -182,6 +184,7 @@ func (ctx *Context) GetPrimaryClusterTable(classId uint32) (*IcClusterTable, err
 }
 
 // CreateViewTable 以主表将所有簇表构建成view试图
+// force 是否强制删除重建
 func (ctx *Context) CreateViewTable(classId uint32, force bool) error {
 	cTables, err := ctx.GetClusterTables(classId)
 	if nil != err {
@@ -240,11 +243,15 @@ func filterRepeatedColumns(primaryTables *dsl.Meta, clusterTables []*dsl.Meta) m
 	}
 	return result
 }
+
+// GenerateSelectColumnsSQL 生成sql选项，select t0.a t0.b ...
 func GenerateSelectColumnsSQL(primaryTables *dsl.Meta, clusterTables []*dsl.Meta) (string, error) {
 	var sb strings.Builder
 	_, err := GenerateSelectColumnsSQLBuilder(&sb, primaryTables, clusterTables)
 	return sb.String(), err
 }
+
+// GenerateSelectColumnsSQLBuilder 将
 func GenerateSelectColumnsSQLBuilder(sb *strings.Builder, primaryTables *dsl.Meta, clusterTables []*dsl.Meta) (string, error) {
 	var key string
 	for _, col := range primaryTables.Columns {

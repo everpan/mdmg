@@ -14,7 +14,7 @@ type MyHandlerExport struct {
 	Handler MyHandler
 }
 
-type MyHandler func(ctx *Context) error
+type MyHandler func(ctx *IcContext) error
 
 func (h MyHandler) WrapHandler() fiber.Handler {
 	return func(fc *fiber.Ctx) error {
@@ -30,7 +30,7 @@ func (h MyHandler) WrapHandler() fiber.Handler {
 	}
 }
 
-type Context struct {
+type IcContext struct {
 	fc            *fiber.Ctx
 	tenant        *tenant.IcTenantInfo
 	v8Ctx         *v8.Context
@@ -44,8 +44,8 @@ func NewContextWithParams(
 	v8Ctx *v8.Context,
 	db *xorm.Engine,
 	moduleVersion string,
-) *Context {
-	ctx := &Context{
+) *IcContext {
+	ctx := &IcContext{
 		fc:            fc,
 		tenant:        tenant,
 		v8Ctx:         v8Ctx,
@@ -57,26 +57,26 @@ func NewContextWithParams(
 	}
 	return ctx
 }
-func (c *Context) FiberCtx() *fiber.Ctx {
+func (c *IcContext) FiberCtx() *fiber.Ctx {
 	return c.fc
 }
-func (c *Context) V8Ctx() *v8.Context {
+func (c *IcContext) V8Ctx() *v8.Context {
 	return c.v8Ctx
 }
-func (c *Context) Engine() *xorm.Engine {
+func (c *IcContext) Engine() *xorm.Engine {
 	return c.db
 }
-func (c *Context) ModuleVersion() string {
+func (c *IcContext) ModuleVersion() string {
 	return c.moduleVersion
 }
-func (c *Context) SetModuleVersion(moduleVersion string) {
+func (c *IcContext) SetModuleVersion(moduleVersion string) {
 	c.moduleVersion = moduleVersion
 }
-func (c *Context) RunScript(source string, origin string) (*v8.Value, error) {
+func (c *IcContext) RunScript(source string, origin string) (*v8.Value, error) {
 	return c.v8Ctx.RunScript(source, origin)
 }
 
-func (c *Context) RunScriptRetAny(source string, origin string) (any, *v8.Value, error) {
+func (c *IcContext) RunScriptRetAny(source string, origin string) (any, *v8.Value, error) {
 	v, err := c.v8Ctx.RunScript(source, origin)
 	if err != nil {
 		return nil, nil, err
@@ -85,7 +85,7 @@ func (c *Context) RunScriptRetAny(source string, origin string) (any, *v8.Value,
 	return g, v, e
 }
 
-func (c *Context) CreateV8Context() *v8.Context {
+func (c *IcContext) CreateV8Context() *v8.Context {
 	iso := v8.NewIsolate()
 	icObj := v8.NewObjectTemplate(iso)
 	obj := v8.NewObjectTemplate(iso)
@@ -99,7 +99,7 @@ func (c *Context) CreateV8Context() *v8.Context {
 	return v8ctx
 }
 
-func (c *Context) ExportV8ObjectTemplate(iso *v8.Isolate) *v8.ObjectTemplate {
+func (c *IcContext) ExportV8ObjectTemplate(iso *v8.Isolate) *v8.ObjectTemplate {
 	mf := v8.NewFunctionTemplate(iso, func(info *v8.FunctionCallbackInfo) *v8.Value {
 		m, _ := utils.SplitModuleVersion(c.moduleVersion)
 		jv, _ := v8.NewValue(iso, m)

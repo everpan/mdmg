@@ -16,9 +16,9 @@ func TestExportObject(t *testing.T) {
 		path   string
 		target string
 		script string
-		want   func(ctx *Context, value *v8.Value) bool
+		want   func(ctx *IcContext, value *v8.Value) bool
 	}{
-		{"undefined", "", "/", "", func(ctx *Context, value *v8.Value) bool {
+		{"undefined", "", "/", "", func(ctx *IcContext, value *v8.Value) bool {
 			// logger.Info("run", zap.Any("val", value))
 			return value.String() == "undefined"
 		}},
@@ -42,7 +42,7 @@ return {
 	base: icode.baseURL(),
 	originURL: icode.originURL()
 }
-})()`, func(ctx *Context, value *v8.Value) bool {
+})()`, func(ctx *IcContext, value *v8.Value) bool {
 				gv, _ := utils.ToGoValue(ctx.V8Ctx(), value)
 				// logger.Info("run", zap.Any("val", gv), zap.String("type", reflect.TypeOf(gv).String()))
 				jv0 := gv.(map[string]interface{})

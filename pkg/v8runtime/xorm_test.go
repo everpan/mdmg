@@ -13,7 +13,7 @@ import (
 	"xorm.io/xorm/log"
 )
 
-var _ctx = &Context{}
+var _ctx = &IcContext{}
 var testDbFilename = "xorm_test.db"
 
 func setup() {

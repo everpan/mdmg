@@ -5,9 +5,9 @@ import (
 	"xorm.io/xorm"
 )
 
-func (c *Context) SetEngine(engine *xorm.Engine) {
+func (c *IcContext) SetEngine(engine *xorm.Engine) {
 	c.db = engine
 }
-func (c *Context) SetV8Ctx(context *v8.Context) {
+func (c *IcContext) SetV8Ctx(context *v8.Context) {
 	c.v8Ctx = context
 }

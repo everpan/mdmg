@@ -18,7 +18,7 @@ var ICoderHandler = MyHandlerExport{
 	Handler: icodeHandler,
 }
 
-func icodeHandler(ctx *Context) error {
+func icodeHandler(ctx *IcContext) error {
 	fc := ctx.FiberCtx()
 	movVer := fc.Params("modVer")
 	ctx.SetModuleVersion(movVer)
@@ -74,7 +74,7 @@ func icodeHandler(ctx *Context) error {
 	return nil
 }
 
-func runScriptByFileShortName(ctx *Context, shortFileName string) (*v8.Value, error) {
+func runScriptByFileShortName(ctx *IcContext, shortFileName string) (*v8.Value, error) {
 	scriptFile := filepath.Join(config.DefaultConfig.JSModuleRootPath, shortFileName)
 	scriptContext, err := os.ReadFile(scriptFile)
 	if err != nil {
