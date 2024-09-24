@@ -61,7 +61,7 @@ func CreateApp() *fiber.App {
 
 	apiRouter := app.Group("/api")
 	ctx.AppRouterAdd(apiRouter, &handler.ICoderHandler)
-	ctx.AppRouterAddMulti(apiRouter, handler.EntityHandlers)
+	ctx.AppRouterAddGroup(app, handler.EntityGroupHandler)
 
 	staticConf := fiber.Static{
 		Compress:      true,

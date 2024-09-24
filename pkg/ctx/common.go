@@ -44,6 +44,7 @@ func AppRouterAddMulti(router fiber.Router, handlers []*IcPathHandler) {
 		AppRouterAdd(router, handler)
 	}
 }
+
 func AppRouterAddGroup(app *fiber.App, g *IcGroupPathHandler) {
 	r := app.Group(g.GroupPath)
 	AppRouterAddMulti(r, g.Handlers)

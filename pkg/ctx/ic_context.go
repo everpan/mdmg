@@ -24,10 +24,10 @@ type IcHandler func(ctx *IcContext) error
 
 func (h IcHandler) WrapHandler() fiber.Handler {
 	return func(fc *fiber.Ctx) error {
-		ctx, err := AcquireIcContext(fc)
+		ctx, err := AcquireIcContextFromTenantId(fc)
 		if err != nil || ctx == nil {
 			if ctx == nil {
-				err = fmt.Errorf("cannot acquire context: %v", fc.GetReqHeaders())
+				err = fmt.Errorf("ctx is nil,%v", err.Error())
 			}
 			return SendError(fc, fiber.StatusBadRequest, err)
 		}
