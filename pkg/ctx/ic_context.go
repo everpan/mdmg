@@ -19,7 +19,7 @@ type MyHandler func(ctx *IcContext) error
 
 func (h MyHandler) WrapHandler() fiber.Handler {
 	return func(fc *fiber.Ctx) error {
-		ctx, err := v8runtime.AcquireContext(fc)
+		ctx, err := AcquireContext(fc)
 		if err != nil || ctx == nil {
 			if ctx == nil {
 				err = fmt.Errorf("cannot acquire context: %v", fc.GetReqHeaders())
