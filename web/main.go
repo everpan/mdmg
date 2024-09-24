@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/everpan/mdmg/pkg/base/log"
+	"github.com/everpan/mdmg/pkg/base/tenant"
 	"github.com/everpan/mdmg/pkg/handler"
-	"github.com/everpan/mdmg/pkg/log"
-	"github.com/everpan/mdmg/pkg/tenant"
 	"github.com/gofiber/contrib/fgprof"
 	"github.com/gofiber/contrib/fiberzap/v2"
 	"github.com/gofiber/contrib/swagger"

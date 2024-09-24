@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/everpan/mdmg/dsl"
+	"github.com/everpan/mdmg/pkg/base/log"
+	"github.com/everpan/mdmg/pkg/base/store"
 	"strconv"
 	"strings"
 
-	"github.com/everpan/mdmg/pkg/log"
-	"github.com/everpan/mdmg/pkg/store"
 	"go.uber.org/zap"
 	"xorm.io/xorm"
 )

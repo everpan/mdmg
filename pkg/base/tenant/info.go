@@ -3,8 +3,8 @@ package tenant
 import (
 	"errors"
 	"github.com/Microsoft/go-winio/pkg/guid"
-	"github.com/everpan/mdmg/pkg/log"
-	"github.com/everpan/mdmg/pkg/store"
+	"github.com/everpan/mdmg/pkg/base/log"
+	"github.com/everpan/mdmg/pkg/base/store"
 	"go.uber.org/zap"
 	"xorm.io/xorm"
 )

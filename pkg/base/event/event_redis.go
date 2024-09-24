@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/everpan/mdmg/pkg/log"
+	"github.com/everpan/mdmg/pkg/base/log"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
@@ -27,10 +27,10 @@ func NewRedisEvent() *RedisEvent {
 }
 
 func NewRedisEventWithClient(client *redis.Client) *RedisEvent {
-	redis := NewRedisEvent()
-	redis.client = client
-	redis.ctx = context.Background()
-	return redis
+	rInst := NewRedisEvent()
+	rInst.client = client
+	rInst.ctx = context.Background()
+	return rInst
 }
 
 func (r *RedisEvent) Driver() string {
@@ -64,7 +64,7 @@ func (r *RedisEvent) Fetch(eventId uint64) *Event {
 		logger.Error("event get", zap.String("key", key), zap.Error(err))
 		return nil
 	}
-	json.Unmarshal(data, e)
+	_ = json.Unmarshal(data, e)
 	// fmt.Println(string(bytes))
 	return e
 }
@@ -73,5 +73,5 @@ func (r *RedisEvent) FetchGte(eventId uint64, limit int32) []*Event {
 }
 
 func (r *RedisEvent) Close() {
-	r.client.Close()
+	_ = r.client.Close()
 }

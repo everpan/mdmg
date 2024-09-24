@@ -44,7 +44,7 @@ func init() {
 	go func() {
 		for {
 			event := <-appEventChan
-			AppEvent.Add(event)
+			_ = AppEvent.Add(event)
 		}
 	}()
 }

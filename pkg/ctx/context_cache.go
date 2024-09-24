@@ -1,8 +1,8 @@
 package ctx
 
 import (
-	"github.com/everpan/mdmg/pkg/store"
-	"github.com/everpan/mdmg/pkg/tenant"
+	"github.com/everpan/mdmg/pkg/base/store"
+	"github.com/everpan/mdmg/pkg/base/tenant"
 	"github.com/gofiber/fiber/v2"
 	"k8s.io/apimachinery/pkg/api/errors"
 )
