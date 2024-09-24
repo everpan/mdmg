@@ -20,7 +20,7 @@ type IcTenantInfo struct {
 	ConnectString string `json:"connect_string" xorm:"varchar(1024) notnull"` // 数据库连接配置
 	LastUpTime    int64  `json:"last_up_time" xorm:"-"`                       // 内存使用，为效率，未同步数据库；用于清理cache
 	Extension     string `json:"extension" xorm:"text "`                      // 通过json进行扩展属性
-	IsTestEnv     bool   `json:"is_test_env" xorm:"boolean"`                  //测试环境
+	IsTestEnv     bool   `json:"is_test_env" xorm:"boolean"`                  // 测试环境
 	IsHost        bool   `json:"is_host" xorm:"-"`                            // 运营商账号，每个系统只有一个
 }
 

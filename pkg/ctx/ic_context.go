@@ -3,7 +3,8 @@ package ctx
 import (
 	"fmt"
 	"github.com/everpan/mdmg/pkg/base/tenant"
-	v8runtime2 "github.com/everpan/mdmg/pkg/base/v8runtime"
+	"github.com/everpan/mdmg/pkg/base/v8runtime"
+	"github.com/everpan/mdmg/pkg/handler"
 	"github.com/everpan/mdmg/utils"
 	"github.com/gofiber/fiber/v2"
 	v8 "rogchap.com/v8go"
@@ -19,12 +20,12 @@ type IcHandler func(ctx *IcContext) error
 
 func (h IcHandler) WrapHandler() fiber.Handler {
 	return func(fc *fiber.Ctx) error {
-		ctx, err := AcquireContext(fc)
+		ctx, err := AcquireIcContext(fc)
 		if err != nil || ctx == nil {
 			if ctx == nil {
 				err = fmt.Errorf("cannot acquire context: %v", fc.GetReqHeaders())
 			}
-			return v8runtime2.SendError(fc, fiber.StatusBadRequest, err)
+			return handler.SendError(fc, fiber.StatusBadRequest, err)
 		}
 		ctx.fc = fc
 		return h(ctx)
@@ -35,7 +36,7 @@ type IcContext struct {
 	fc            *fiber.Ctx
 	tenant        *tenant.IcTenantInfo
 	v8Ctx         *v8.Context
-	db            *xorm.Engine
+	engine        *xorm.Engine
 	moduleVersion string
 }
 
@@ -43,14 +44,14 @@ func NewContextWithParams(
 	fc *fiber.Ctx,
 	tenant *tenant.IcTenantInfo,
 	v8Ctx *v8.Context,
-	db *xorm.Engine,
+	engine *xorm.Engine,
 	moduleVersion string,
 ) *IcContext {
 	ctx := &IcContext{
 		fc:            fc,
 		tenant:        tenant,
 		v8Ctx:         v8Ctx,
-		db:            db,
+		engine:        engine,
 		moduleVersion: moduleVersion,
 	}
 	if ctx.v8Ctx == nil {
@@ -65,7 +66,7 @@ func (c *IcContext) V8Ctx() *v8.Context {
 	return c.v8Ctx
 }
 func (c *IcContext) Engine() *xorm.Engine {
-	return c.db
+	return c.engine
 }
 func (c *IcContext) ModuleVersion() string {
 	return c.moduleVersion
@@ -92,7 +93,7 @@ func (c *IcContext) CreateV8Context() *v8.Context {
 	obj := v8.NewObjectTemplate(iso)
 	ctxObj := c.ExportV8ObjectTemplate(iso)
 	_ = obj.Set("ctx", ctxObj)
-	_ = obj.Set("db", v8runtime2.ExportXormObject(c.db, iso))
+	_ = obj.Set("engine", v8runtime.ExportXormObject(c.engine, iso))
 	_ = icObj.Set("__ic", obj)
 	v8ctx := v8.NewContext(iso, icObj)
 	// icode.logger.IcTenantInfo("create v8 context", zap.Any("fbCtx", fb))
@@ -115,7 +116,7 @@ func (c *IcContext) ExportV8ObjectTemplate(iso *v8.Isolate) *v8.ObjectTemplate {
 		jv, _ := utils.ToJsValue(info.Context(), c.tenant)
 		return jv
 	})
-	ctxObj := v8runtime2.ExportObject(c.fc, iso)
+	ctxObj := v8runtime.ExportObject(c.fc, iso)
 	_ = ctxObj.Set("module", mf)
 	_ = ctxObj.Set("version", vf)
 	_ = ctxObj.Set("tenant", ti)

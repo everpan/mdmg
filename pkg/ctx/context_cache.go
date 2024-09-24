@@ -11,7 +11,7 @@ var (
 	cache store.OneLevelMap[string, *IcContext]
 )
 
-func AcquireContext(fc *fiber.Ctx) (*IcContext, error) {
+func AcquireIcContext(fc *fiber.Ctx) (*IcContext, error) {
 	tenantSid := fc.GetRespHeader("X-Tenant-Sid", tenant.DefaultGuidNamespace)
 	ctx, ok := cache.Get(tenantSid)
 	if !ok {

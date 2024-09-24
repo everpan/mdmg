@@ -3,7 +3,6 @@ package handler
 import (
 	"errors"
 	"fmt"
-	"github.com/everpan/mdmg/pkg/base/v8runtime"
 	"github.com/everpan/mdmg/pkg/ctx"
 	"github.com/everpan/mdmg/utils"
 	"github.com/everpan/mdmg/web/config"
@@ -53,7 +52,7 @@ func icodeHandler(ctx *ctx.IcContext) error {
 						var gv any
 						gv, err = utils.ToGoValue(ctx.V8Ctx(), output)
 						if err == nil {
-							resp := v8runtime.ICodeResponse{
+							resp := ICodeResponse{
 								Code: 0,
 								Data: gv,
 							}
@@ -68,9 +67,9 @@ func icodeHandler(ctx *ctx.IcContext) error {
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			err = errors.New(fmt.Sprintf("can not find %v", shortFileName))
-			v8runtime.SendError(fc, fiber.StatusNotFound, err)
+			SendError(fc, fiber.StatusNotFound, err)
 		} else {
-			return v8runtime.SendInternalServerError(fc, err)
+			return SendInternalServerError(fc, err)
 		}
 	}
 	return nil

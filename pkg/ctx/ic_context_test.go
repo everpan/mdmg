@@ -6,7 +6,7 @@ import (
 )
 
 func (c *IcContext) SetEngine(engine *xorm.Engine) {
-	c.db = engine
+	c.engine = engine
 }
 func (c *IcContext) SetV8Ctx(context *v8.Context) {
 	c.v8Ctx = context
