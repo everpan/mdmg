@@ -2,6 +2,7 @@ package v8runtime
 
 import (
 	"fmt"
+	"github.com/everpan/mdmg/pkg/ctx"
 	"github.com/everpan/mdmg/utils"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
@@ -13,7 +14,7 @@ import (
 	"xorm.io/xorm/log"
 )
 
-var _ctx = &IcContext{}
+var _ctx = &ctx.IcContext{}
 var testDbFilename = "xorm_test.db"
 
 func setup() {

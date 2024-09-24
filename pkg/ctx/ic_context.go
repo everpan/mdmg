@@ -1,8 +1,9 @@
-package v8runtime
+package ctx
 
 import (
 	"fmt"
 	"github.com/everpan/mdmg/pkg/tenant"
+	"github.com/everpan/mdmg/pkg/v8runtime"
 	"github.com/everpan/mdmg/utils"
 	"github.com/gofiber/fiber/v2"
 	v8 "rogchap.com/v8go"
@@ -18,12 +19,12 @@ type MyHandler func(ctx *IcContext) error
 
 func (h MyHandler) WrapHandler() fiber.Handler {
 	return func(fc *fiber.Ctx) error {
-		ctx, err := AcquireContext(fc)
+		ctx, err := v8runtime.AcquireContext(fc)
 		if err != nil || ctx == nil {
 			if ctx == nil {
 				err = fmt.Errorf("cannot acquire context: %v", fc.GetReqHeaders())
 			}
-			return SendError(fc, fiber.StatusBadRequest, err)
+			return v8runtime.SendError(fc, fiber.StatusBadRequest, err)
 		}
 		ctx.fc = fc
 		return h(ctx)
@@ -91,7 +92,7 @@ func (c *IcContext) CreateV8Context() *v8.Context {
 	obj := v8.NewObjectTemplate(iso)
 	ctxObj := c.ExportV8ObjectTemplate(iso)
 	_ = obj.Set("ctx", ctxObj)
-	_ = obj.Set("db", ExportXormObject(c.db, iso))
+	_ = obj.Set("db", v8runtime.ExportXormObject(c.db, iso))
 	_ = icObj.Set("__ic", obj)
 	v8ctx := v8.NewContext(iso, icObj)
 	// icode.logger.IcTenantInfo("create v8 context", zap.Any("fbCtx", fb))
@@ -114,7 +115,7 @@ func (c *IcContext) ExportV8ObjectTemplate(iso *v8.Isolate) *v8.ObjectTemplate {
 		jv, _ := utils.ToJsValue(info.Context(), c.tenant)
 		return jv
 	})
-	ctxObj := ExportObject(c.fc, iso)
+	ctxObj := v8runtime.ExportObject(c.fc, iso)
 	_ = ctxObj.Set("module", mf)
 	_ = ctxObj.Set("version", vf)
 	_ = ctxObj.Set("tenant", ti)

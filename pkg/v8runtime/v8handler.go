@@ -3,6 +3,7 @@ package v8runtime
 import (
 	"errors"
 	"fmt"
+	"github.com/everpan/mdmg/pkg/ctx"
 	"github.com/everpan/mdmg/utils"
 	"github.com/everpan/mdmg/web/config"
 	"github.com/gofiber/fiber/v2"
@@ -13,12 +14,12 @@ import (
 	"strings"
 )
 
-var ICoderHandler = MyHandlerExport{
+var ICoderHandler = ctx.MyHandlerExport{
 	Path:    "/v1/icode/:modVer/:jsFile/*",
 	Handler: icodeHandler,
 }
 
-func icodeHandler(ctx *IcContext) error {
+func icodeHandler(ctx *ctx.IcContext) error {
 	fc := ctx.FiberCtx()
 	movVer := fc.Params("modVer")
 	ctx.SetModuleVersion(movVer)
@@ -74,7 +75,7 @@ func icodeHandler(ctx *IcContext) error {
 	return nil
 }
 
-func runScriptByFileShortName(ctx *IcContext, shortFileName string) (*v8.Value, error) {
+func runScriptByFileShortName(ctx *ctx.IcContext, shortFileName string) (*v8.Value, error) {
 	scriptFile := filepath.Join(config.DefaultConfig.JSModuleRootPath, shortFileName)
 	scriptContext, err := os.ReadFile(scriptFile)
 	if err != nil {
@@ -103,6 +104,6 @@ func runMethodScript(method string, script *v8.Value, ctx *v8.Context) (*v8.Valu
 	return methodFun.Call(ctx.Global())
 }
 
-func AppRouterAdd(router fiber.Router, h *MyHandlerExport) {
+func AppRouterAdd(router fiber.Router, h *ctx.MyHandlerExport) {
 	router.Group(h.Path, h.Handler.WrapHandler())
 }

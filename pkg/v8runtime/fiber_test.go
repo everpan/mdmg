@@ -1,6 +1,7 @@
 package v8runtime
 
 import (
+	"github.com/everpan/mdmg/pkg/ctx"
 	"net/http/httptest"
 	"testing"
 
@@ -16,9 +17,9 @@ func TestExportObject(t *testing.T) {
 		path   string
 		target string
 		script string
-		want   func(ctx *IcContext, value *v8.Value) bool
+		want   func(ctx *ctx.IcContext, value *v8.Value) bool
 	}{
-		{"undefined", "", "/", "", func(ctx *IcContext, value *v8.Value) bool {
+		{"undefined", "", "/", "", func(ctx *ctx.IcContext, value *v8.Value) bool {
 			// logger.Info("run", zap.Any("val", value))
 			return value.String() == "undefined"
 		}},
@@ -42,7 +43,7 @@ return {
 	base: icode.baseURL(),
 	originURL: icode.originURL()
 }
-})()`, func(ctx *IcContext, value *v8.Value) bool {
+})()`, func(ctx *ctx.IcContext, value *v8.Value) bool {
 				gv, _ := utils.ToGoValue(ctx.V8Ctx(), value)
 				// logger.Info("run", zap.Any("val", gv), zap.String("type", reflect.TypeOf(gv).String()))
 				jv0 := gv.(map[string]interface{})
@@ -58,7 +59,7 @@ return {
 		t.Run(tt.name, func(t *testing.T) {
 			app := fiber.New()
 			app.Get(tt.path, func(c *fiber.Ctx) error {
-				ctx := NewContextWithParams(c, nil, nil, nil, "")
+				ctx := ctx.NewContextWithParams(c, nil, nil, nil, "")
 				val, err := ctx.RunScript(tt.script, "test.js")
 				assert.Nil(t, err)
 				assert.True(t, tt.want(ctx, val))

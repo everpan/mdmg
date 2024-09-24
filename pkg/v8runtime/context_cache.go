@@ -1,6 +1,7 @@
 package v8runtime
 
 import (
+	"github.com/everpan/mdmg/pkg/ctx"
 	"github.com/everpan/mdmg/pkg/store"
 	"github.com/everpan/mdmg/pkg/tenant"
 	"github.com/gofiber/fiber/v2"
@@ -8,10 +9,10 @@ import (
 )
 
 var (
-	cache store.OneLevelMap[string, *IcContext]
+	cache store.OneLevelMap[string, *ctx.IcContext]
 )
 
-func AcquireContext(fc *fiber.Ctx) (*IcContext, error) {
+func AcquireContext(fc *fiber.Ctx) (*ctx.IcContext, error) {
 	tenantSid := fc.GetRespHeader("X-Tenant-Sid", tenant.DefaultGuidNamespace)
 	ctx, ok := cache.Get(tenantSid)
 	if !ok {
@@ -29,7 +30,7 @@ func AcquireContext(fc *fiber.Ctx) (*IcContext, error) {
 			e := errors.NewBadRequest("can not acquire engine for tenantSid:" + tenantSid + ",error:" + err.Error())
 			return nil, e
 		}
-		ctx = NewContextWithParams(fc, info, nil, engine, "")
+		ctx = ctx.NewContextWithParams(fc, info, nil, engine, "")
 		cache.Set(tenantSid, ctx)
 	}
 	return ctx, nil
