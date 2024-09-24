@@ -10,14 +10,14 @@ import (
 	"xorm.io/xorm"
 )
 
-type MyHandlerExport struct {
+type IcPathHandler struct {
 	Path    string
-	Handler MyHandler
+	Handler IcHandler
 }
 
-type MyHandler func(ctx *IcContext) error
+type IcHandler func(ctx *IcContext) error
 
-func (h MyHandler) WrapHandler() fiber.Handler {
+func (h IcHandler) WrapHandler() fiber.Handler {
 	return func(fc *fiber.Ctx) error {
 		ctx, err := AcquireContext(fc)
 		if err != nil || ctx == nil {

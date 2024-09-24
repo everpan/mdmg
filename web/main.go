@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
-	handler2 "github.com/everpan/mdmg/pkg/handler"
+	"github.com/everpan/mdmg/pkg/handler"
 	"github.com/everpan/mdmg/pkg/log"
 	"github.com/everpan/mdmg/pkg/tenant"
-	"github.com/everpan/mdmg/web/handler"
 	"github.com/gofiber/contrib/fgprof"
 	"github.com/gofiber/contrib/fiberzap/v2"
 	"github.com/gofiber/contrib/swagger"
@@ -42,7 +41,7 @@ func CreateApp() *fiber.App {
 	var defaultEngin, _ = xorm.NewEngine(
 		viper.GetString("db.driver"),
 		viper.GetString("db.connect"))
-	tenant.SetEngine(defaultEngin)
+	tenant.SetSysEngine(defaultEngin)
 
 	app := fiber.New()
 	logger := log.GetLogger()
@@ -60,7 +59,8 @@ func CreateApp() *fiber.App {
 	app.Use(fgprof.New())
 
 	apiRouter := app.Group("/api")
-	handler2.AppRouterAdd(apiRouter, &handler.ICoderHandler)
+	handler.AppRouterAdd(apiRouter, &handler.ICoderHandler)
+	handler.AppRouterAdd(apiRouter, &handler.EntityHandler)
 
 	staticConf := fiber.Static{
 		Compress:      true,

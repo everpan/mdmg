@@ -111,7 +111,7 @@ func TestIcodeHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tenant.SetEngine(defaultEngin)
+	tenant.SetSysEngine(defaultEngin)
 	InitTable(defaultEngin)
 
 	for _, tt := range tests {

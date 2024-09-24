@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-var ICoderHandler = ctx.MyHandlerExport{
+var ICoderHandler = ctx.IcPathHandler{
 	Path:    "/v1/icode/:modVer/:jsFile/*",
 	Handler: icodeHandler,
 }
@@ -105,6 +105,6 @@ func runMethodScript(method string, script *v8.Value, ctx *v8.Context) (*v8.Valu
 	return methodFun.Call(ctx.Global())
 }
 
-func AppRouterAdd(router fiber.Router, h *ctx.MyHandlerExport) {
+func AppRouterAdd(router fiber.Router, h *ctx.IcPathHandler) {
 	router.Group(h.Path, h.Handler.WrapHandler())
 }

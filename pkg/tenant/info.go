@@ -38,7 +38,8 @@ var (
 		"22222222-2222-2222-2222-222222222222", "host", "运营商", "", true)
 )
 
-func SetEngine(e *xorm.Engine) {
+// SetSysEngine 专门用于系统管理，区别于应用db
+func SetSysEngine(e *xorm.Engine) {
 	defaultSystemEngine = e
 }
 
@@ -69,6 +70,7 @@ func (tenant *IcTenantInfo) SaveTenantInfo() error {
 }
 
 func AcquireTenantInfoBySid(sid string) (*IcTenantInfo, error) {
+	// sid : string id
 	info, ok := cache.Get(sid)
 	if ok {
 		return info, nil
