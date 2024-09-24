@@ -1,8 +1,9 @@
-package v8runtime
+package handler
 
 import (
 	"github.com/everpan/mdmg/pkg/log"
 	"github.com/everpan/mdmg/pkg/tenant"
+	"github.com/everpan/mdmg/pkg/v8runtime"
 	"github.com/everpan/mdmg/web/config"
 	"github.com/gofiber/fiber/v2"
 	_ "github.com/mattn/go-sqlite3"
@@ -21,7 +22,7 @@ type checkFun func(t *testing.T, r *http.Response, e error)
 
 var echoBody = func(t *testing.T, r *http.Response, e error) {
 	body, _ := io.ReadAll(r.Body)
-	ret := &ICodeResponse{}
+	ret := &v8runtime.ICodeResponse{}
 	ret.Unmarshal(body)
 	t.Log("body", string(body))
 	t.Log(ret)
@@ -30,7 +31,7 @@ var echoBody = func(t *testing.T, r *http.Response, e error) {
 var contains = func(code int, msg string) checkFun {
 	return func(t *testing.T, r *http.Response, e error) {
 		body, _ := io.ReadAll(r.Body)
-		ret := &ICodeResponse{}
+		ret := &v8runtime.ICodeResponse{}
 		ret.Unmarshal(body)
 		// t.Log("body", string(body), ret)
 		assert.Equal(t, code, ret.Code)
@@ -52,7 +53,7 @@ var wantInternalServerError = func(msg string) func(*testing.T, *http.Response, 
 			t.Error(err)
 		}
 		body, _ := io.ReadAll(res.Body)
-		ret := &ICodeResponse{}
+		ret := &v8runtime.ICodeResponse{}
 		ret.Unmarshal(body)
 		assert.Nilf(t, err, "body: %v", string(body))
 		assert.Equal(t, fiber.StatusInternalServerError, res.StatusCode)

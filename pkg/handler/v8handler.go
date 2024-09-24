@@ -1,9 +1,10 @@
-package v8runtime
+package handler
 
 import (
 	"errors"
 	"fmt"
 	"github.com/everpan/mdmg/pkg/ctx"
+	"github.com/everpan/mdmg/pkg/v8runtime"
 	"github.com/everpan/mdmg/utils"
 	"github.com/everpan/mdmg/web/config"
 	"github.com/gofiber/fiber/v2"
@@ -52,7 +53,7 @@ func icodeHandler(ctx *ctx.IcContext) error {
 						var gv any
 						gv, err = utils.ToGoValue(ctx.V8Ctx(), output)
 						if err == nil {
-							resp := ICodeResponse{
+							resp := v8runtime.ICodeResponse{
 								Code: 0,
 								Data: gv,
 							}
@@ -67,9 +68,9 @@ func icodeHandler(ctx *ctx.IcContext) error {
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			err = errors.New(fmt.Sprintf("can not find %v", shortFileName))
-			SendError(fc, fiber.StatusNotFound, err)
+			v8runtime.SendError(fc, fiber.StatusNotFound, err)
 		} else {
-			return SendInternalServerError(fc, err)
+			return v8runtime.SendInternalServerError(fc, err)
 		}
 	}
 	return nil
