@@ -348,9 +348,9 @@ func GenerateJoinTableSQL(primaryTables *dsl.Meta, clusterTables []*dsl.Meta) (s
 }
 
 func FilterPrimaryClusterTable(tables []*IcClusterTable) *IcClusterTable {
-	if tables == nil {
-		return nil
-	}
+	//if tables == nil {
+	//	return nil
+	//}
 	for _, table := range tables {
 		if table.IsPrimary {
 			return table

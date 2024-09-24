@@ -92,7 +92,7 @@ func TestRegisterEntityClass(t *testing.T) {
 		wantErr assert.ErrorAssertionFunc
 	}{
 		{"insert 0", ec, &e2Want, emptyErrFn},
-		{"insert same unique class name", &e2, nil,
+		{"insert same unique class name, return unique constraint", &e2, nil,
 			func(t assert.TestingT, err error, i ...interface{}) bool {
 				b := strings.Contains(err.Error(), "UNIQUE constraint failed")
 				if !b {
@@ -142,11 +142,11 @@ func TestGenerateLeftJoinSQL(t *testing.T) {
 		{"zero table left join", args{nil, "key"},
 			""},
 		{"one table left join", args{data[0:1], "key"},
-			"\nleft join a as t1 on t0.key=t1.key"},
+			"left join a as t1 on t0.key = t1.key"},
 		{"two tables left join", args{data[0:2], "key"},
-			"\nleft join a as t1 on t0.key=t1.key\nleft join b as t2 on t0.key=t2.key"},
+			"left join a as t1 on t0.key = t1.key\nleft join b as t2 on t0.key = t2.key"},
 		{"three tables left join", args{data[0:3], "key"},
-			"\nleft join a as t1 on t0.key=t1.key\nleft join b as t2 on t0.key=t2.key\nleft join c as t3 on t0.key=t3.key"},
+			"left join a as t1 on t0.key = t1.key\nleft join b as t2 on t0.key = t2.key\nleft join c as t3 on t0.key = t3.key"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -186,11 +186,11 @@ func TestGenerateSelectColumnsSQL(t *testing.T) {
 	}{
 		{"no primary key", data[0], data, "", "not fount primary key in table"},
 		{"2nd table aliased", primaryTable, data[0:1],
-			"select t0.idx, t0.a1\n, t1.a1 as a1_1", ""},
+			"select t0.idx, t0.a1,\nt1.a1 as a1_1", ""},
 		{"3rd table aliased", primaryTable, data[0:2],
-			"select t0.idx, t0.a1\n, t1.a1 as a1_1\n, t2.a1 as a1_2, t2.a2", ""},
+			"select t0.idx, t0.a1,\nt1.a1 as a1_1,\nt2.a1 as a1_2, t2.a2", ""},
 		{"4th table aliased", primaryTable, data[0:3],
-			"select t0.idx, t0.a1\n, t1.a1 as a1_1\n, t2.a1 as a1_2, t2.a2 as a2_2\n, t3.a1 as a1_3, t3.a2 as a2_3, t3.a3", ""},
+			"select t0.idx, t0.a1,\nt1.a1 as a1_1,\nt2.a1 as a1_2, t2.a2 as a2_2,\nt3.a1 as a1_3, t3.a2 as a2_3, t3.a3", ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
