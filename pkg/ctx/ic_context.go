@@ -61,7 +61,7 @@ type IcContext struct {
 	v8Ctx         *v8.Context
 	engine        *xorm.Engine
 	moduleVersion string
-	EntityCtx     *entity.Context
+	entityCtx     *entity.Context
 	Page          *IcPage
 }
 
@@ -82,8 +82,8 @@ func NewContextWithParams(
 	if ctx.v8Ctx == nil {
 		ctx.CreateV8Context()
 	}
-	if ctx.EntityCtx == nil {
-		ctx.EntityCtx = entity.NewContext(engine, tenant.Idx)
+	if ctx.entityCtx == nil {
+		ctx.entityCtx = entity.NewContext(engine, tenant.Idx)
 	}
 	if ctx.Page == nil {
 		ctx.Page = NewIcPage()
@@ -98,6 +98,9 @@ func (c *IcContext) V8Ctx() *v8.Context {
 }
 func (c *IcContext) Engine() *xorm.Engine {
 	return c.engine
+}
+func (c *IcContext) EntityCtx() *entity.Context {
+	return c.entityCtx
 }
 func (c *IcContext) ModuleVersion() string {
 	return c.moduleVersion

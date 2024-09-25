@@ -41,7 +41,7 @@ func metaDetail(c *ctx.IcContext) error {
 		return ctx.SendError(fc, fiber.StatusBadRequest,
 			fmt.Errorf("classId=%d is required and must be gt zero", classId))
 	}
-	entityCtx := c.EntityCtx
+	entityCtx := c.EntityCtx()
 	if err != nil { // class name
 		meta.EntityClass, err = entityCtx.GetEntityClassByName(class)
 	} else {
@@ -71,7 +71,7 @@ func metaList(c *ctx.IcContext) error {
 	// todo sql using in (....) ?
 	metas := make([]*entity.IcEntityMeta, len(eClasses))
 	for i, class := range eClasses {
-		tables, _ := c.EntityCtx.GetClusterTables(class.ClassId)
+		tables, _ := c.EntityCtx().GetClusterTables(class.ClassId)
 		metas[i] = &entity.IcEntityMeta{
 			EntityClass:   class,
 			ClusterTables: tables,
