@@ -41,6 +41,7 @@ var (
 // SetSysEngine 专门用于系统管理，区别于应用db
 func SetSysEngine(e *xorm.Engine) {
 	sysEngine = e
+	engineCache.Set(e.DataSourceName(), e)
 }
 
 func init() {
@@ -75,8 +76,8 @@ func (t *IcTenantInfo) InitTable(engine *xorm.Engine) error {
 	if nil != err {
 		return err
 	}
-	err = engine.CreateUniques(t)
-	return err
+	_ = engine.CreateUniques(t)
+	return nil
 }
 
 func AcquireInfoBySid(sid string) (*IcTenantInfo, error) {

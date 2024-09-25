@@ -17,7 +17,7 @@ var (
 func AcquireIcContextFromTenantId(fc *fiber.Ctx) (*IcContext, error) {
 	tenantSid := fc.GetRespHeader("X-Tenant-Sid", tenant.DefaultGuidNamespace)
 	if tenantSid == tenant.DefaultGuidNamespace {
-		logger.Warn("tenant id is the default namespace id", zap.String("id", tenant.DefaultGuidNamespace))
+		logger.Info("tenant id is the default namespace id", zap.String("id", tenant.DefaultGuidNamespace))
 	}
 	ctx, ok := cache.Get(tenantSid)
 	if !ok {
