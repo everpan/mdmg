@@ -16,28 +16,32 @@ import (
 // IcEntityClass 实体类； 划分属性簇； 注册管理，便于业务灵活定义
 // 尽可能每个簇属性放一个表内，通过 entity_id 关联
 type IcEntityClass struct {
-	ClassId        uint32 `xorm:"autoincr pk notnull"`
-	ClassName      string `xorm:"unique"`
-	ClassDesc      string `xorm:"text"` // 关于实体的描述信息
-	EntityPKColumn string `json:"entity_pk_column" xorm:"entity_pk_column index"`
-	TenantId       uint32 `xorm:"index"`
+	ClassId   uint32 `json:"class_id" xorm:"autoincr pk notnull"`
+	ClassName string `json:"name" xorm:"unique"`
+	ClassDesc string `json:"class_desc" xorm:"text"` // 关于实体的描述信息
+	PkColumn  string `json:"pk_column" xorm:"pk_column index"`
+	TenantId  uint32 `json:"tenant_id" xorm:"index"`
 	// EntityUKColumn string `json:"entity_uk_column" xorm:"entity_uk_column index"` // 实体主键列名;统一实体的列类型为uint64，可以采用数据库自增
 	// EntityPrimaryTable string           `xorm:"entity_primary_table unique"`
-	// ClusterIdList []uint32 `json:"cluster_id_list,omitempty" xorm:"cluster_id_list text default ''"` // 属性表，第一个为主属性表; 所以的簇属性必需包含与`EntityPKColumn`同名的主键字段
+	// ClusterIdList []uint32 `json:"cluster_id_list,omitempty" xorm:"cluster_id_list text default ''"` // 属性表，第一个为主属性表; 所以的簇属性必需包含与`PkColumn`同名的主键字段
 }
 
 // IcClusterTable 簇表信息
 // 多个簇表通过left join 进行查询，根据需求定制
 // classId : clusterId = 1 : n
 type IcClusterTable struct {
-	ClassId          uint32 `xorm:"index"`               // 所属实体类
-	ClusterId        uint32 `xorm:"pk autoincr notnull"` // 簇表名
-	ClusterName      string // 簇名
-	ClusterDesc      string `xorm:"text"`   // 簇描述
-	ClusterTableName string `xorm:"unique"` // unique 簇表名； 至少包含EntityPKColumn
-	IsPrimary        bool   `xorm:"bool"`   // 是否是主簇，主簇的key通常是自增
-	TenantId         uint32 `xorm:"index"`
-	Status           int32  `xorm:"index""` // 状态
+	ClassId          uint32 `json:"class_id" xorm:"index"`                 // 所属实体类
+	ClusterId        uint32 `json:"cluster_id" xorm:"pk autoincr notnull"` // 簇表名
+	ClusterName      string `json:"name"`                                  // 簇名
+	ClusterDesc      string `json:"cluster_desc" xorm:"text"`              // 簇描述
+	ClusterTableName string `json:"table" xorm:"unique"`                   // unique 簇表名； 至少包含EntityPKColumn
+	IsPrimary        bool   `json:"is_primary" xorm:"bool"`                // 是否是主簇，主簇的key通常是自增
+	TenantId         uint32 `json:"tenant_id" xorm:"index"`
+	Status           int32  `json:"status" xorm:"index""` // 状态
+}
+type IcEntityMeta struct {
+	EntityClass   *IcEntityClass    `json:"entity_class"`
+	ClusterTables []*IcClusterTable `json:"cluster_tables"`
 }
 
 var (
@@ -50,33 +54,40 @@ func init() {
 
 type Context struct {
 	engine           *xorm.Engine
+	tenantId         uint32
 	entityClassCache store.OneLevelMap[uint32, *IcEntityClass]
 }
 
-func NewContext(engine *xorm.Engine) *Context {
+func NewContext(engine *xorm.Engine, tenantId uint32) *Context {
 	return &Context{
 		engine:           engine,
+		tenantId:         tenantId,
 		entityClassCache: store.OneLevelMap[uint32, *IcEntityClass]{},
 	}
 }
 
-func (ctx *Context) InitTable() {
+func (ctx *Context) InitTable(engine *xorm.Engine) error {
 	ec := &IcEntityClass{}
 	ct := &IcClusterTable{}
-	engine := ctx.engine
 
-	_ = engine.CreateTables(ec, ct)
+	err := engine.CreateTables(ec, ct)
+	if err != nil {
+		return err
+	}
 	_ = engine.CreateUniques(ec)
 	_ = engine.CreateIndexes(ec)
 
 	_ = engine.CreateUniques(ct)
 	_ = engine.CreateIndexes(ct)
+	return nil
 }
 
 func (ctx *Context) SetEngine(eng *xorm.Engine) {
 	ctx.engine = eng
 }
-
+func (ctx *Context) SetTenantId(tenantId uint32) {
+	ctx.tenantId = tenantId
+}
 func (ctx *Context) insertNewEntityClass(ec *IcEntityClass) error {
 	_, err := ctx.engine.Insert(ec)
 	return err
@@ -92,7 +103,7 @@ func (ctx *Context) RegisterEntityClass(ec *IcEntityClass) (*IcEntityClass, erro
 		ctx.entityClassCache.Set(ec.ClassId, ec)
 		return ec, nil
 	}
-	return ctx.GetEntityClass(ec.ClassId)
+	return ctx.GetEntityClassById(ec.ClassId)
 }
 
 // RegisterClassName 注册实体类名，其他信息后续补充，否则不能工作；主要简化工作
@@ -101,7 +112,7 @@ func (ctx *Context) RegisterClassName(className string) (*IcEntityClass, error) 
 	return ctx.RegisterEntityClass(ec)
 }
 
-func (ctx *Context) GetEntityClass(classId uint32) (*IcEntityClass, error) {
+func (ctx *Context) GetEntityClassById(classId uint32) (*IcEntityClass, error) {
 	if classId == 0 {
 		return nil, errors.New("classId is 0")
 	}
@@ -109,7 +120,7 @@ func (ctx *Context) GetEntityClass(classId uint32) (*IcEntityClass, error) {
 	if ok {
 		return e, nil
 	}
-	ec := &IcEntityClass{ClassId: classId}
+	ec := &IcEntityClass{ClassId: classId, TenantId: ctx.tenantId}
 	var err error
 	ok, err = ctx.engine.Get(ec)
 	if err != nil {
@@ -120,18 +131,18 @@ func (ctx *Context) GetEntityClass(classId uint32) (*IcEntityClass, error) {
 		ctx.entityClassCache.Set(ec.ClassId, ec)
 		return ec, nil
 	}
-	return nil, fmt.Errorf("entity classId:%d not found", classId)
+	return nil, fmt.Errorf("entity classId: %d tenantId: %d not found", classId, ctx.tenantId)
 }
 
 func (ctx *Context) GetEntityClassByName(className string) (*IcEntityClass, error) {
 	ec := &IcEntityClass{}
-	ok, err := ctx.engine.Where("class_name = ?", className).Get(ec)
+	ok, err := ctx.engine.Where("class_name = ? and tenant_id = ?", className, ctx.tenantId).Get(ec)
 	if err != nil {
 		logger.Error("Failed to get entity class", zap.Error(err))
 		return nil, err
 	}
 	if !ok {
-		return nil, fmt.Errorf("entity className:%s not found", className)
+		return nil, fmt.Errorf("entity className:%s tenantId:%d not found", className, ctx.tenantId)
 	}
 	return ec, nil
 }
@@ -157,7 +168,7 @@ func (ctx *Context) AddClusterTable(ct *IcClusterTable) error {
 		return errors.New("classId is 0")
 	}
 
-	ec, err := ctx.GetEntityClass(ct.ClassId)
+	ec, err := ctx.GetEntityClassById(ct.ClassId)
 	if nil != err || ec == nil {
 		return fmt.Errorf("entity classId:%d not found, err: %v ,entity:%v",
 			ct.ClassId, err, ec)
@@ -167,7 +178,7 @@ func (ctx *Context) AddClusterTable(ct *IcClusterTable) error {
 
 func (ctx *Context) GetClusterTables(classId uint32) ([]*IcClusterTable, error) {
 	tables := make([]*IcClusterTable, 0)
-	err := ctx.engine.Where("class_id = ?", classId).Find(&tables)
+	err := ctx.engine.Where("class_id = ? and tenant_id = ?", classId, ctx.tenantId).Find(&tables)
 	return tables, err
 }
 

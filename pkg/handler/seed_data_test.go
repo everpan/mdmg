@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/everpan/mdmg/pkg/base/entity"
 	"github.com/everpan/mdmg/pkg/base/tenant"
 	"os"
 	"testing"
@@ -42,4 +43,42 @@ func TestBuildSeedDataForTest(t *testing.T) {
 	tenant.DefaultHostInfo.Driver = "sqlite3"
 	tenant.DefaultHostInfo.ConnectString = dbFile
 	tenant.DefaultHostInfo.Save()
+	// entity
+	eInst := entity.NewContext(engine, 1)
+	eInst.InitTable(engine)
+	// entity data
+	user := &entity.IcEntityClass{ClassName: "user", ClassDesc: "用户信息", PkColumn: "user_id", TenantId: 1}
+	eClass, _ := eInst.RegisterEntityClass(user)
+	uAcc := struct {
+		UserId       uint32 `xorm:"pk autoincr not null"`
+		UserAccount  string `xorm:"not null"`
+		UserPassword string `xorm:"not null"`
+	}{
+		0, "user1", "passwd1",
+	}
+	engine.Table("user_account").CreateTable(&uAcc)
+	engine.Table("user_account").Insert(&uAcc)
+
+	uInfo := struct {
+		UserId       uint32 `xorm:"pk unique not null"`
+		UserName     string `xorm:"not null"`
+		UserNickName string `xorm:"not null"`
+		UserGender   string `xorm:"not null"`
+	}{
+		uAcc.UserId, "user1-name", "user1-nick-name", "man",
+	}
+	engine.Table("user_info").CreateTable(&uInfo)
+	engine.Table("user_info").CreateUniques(&uInfo)
+	engine.Table("user_info").Insert(&uInfo)
+
+	eInst.AddClusterTable(&entity.IcClusterTable{
+		ClassId: eClass.ClassId, ClusterName: "user account",
+		ClusterDesc: "user account desc", ClusterTableName: "user_account",
+		IsPrimary: true, TenantId: 1, Status: 1,
+	})
+	eInst.AddClusterTable(&entity.IcClusterTable{
+		ClassId: eClass.ClassId, ClusterName: "user info",
+		ClusterDesc: "user info desc", ClusterTableName: "user_info",
+		IsPrimary: false, TenantId: 1, Status: 1,
+	})
 }

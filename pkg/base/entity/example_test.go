@@ -43,9 +43,9 @@ func TestRegister(t *testing.T) {
 	t.Logf("NEW TABLE: %s %s", emailTName, nickTName)
 	//
 	ec := &IcEntityClass{
-		ClassName:      "UserAccount",
-		ClassDesc:      "用户账号",
-		EntityPKColumn: "user_id",
+		ClassName: "UserAccount",
+		ClassDesc: "用户账号",
+		PkColumn:  "user_id",
 	}
 	// 1. 注册实体类 UserAccount // 注意大小写
 	ctx.RegisterEntityClass(ec)

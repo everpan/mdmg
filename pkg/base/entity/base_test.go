@@ -22,7 +22,7 @@ func setUp(tName string) *Context {
 	}
 	engine.ShowSQL(true)
 	ctx := NewContext(engine)
-	ctx.InitTable()
+	ctx.InitTable(engine)
 	return ctx
 }
 
@@ -63,11 +63,11 @@ func TestGetEntityClass(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ctx.GetEntityClass(tt.classId)
-			if !tt.wantErr(t, err, fmt.Sprintf("GetEntityClass(%v)", tt.classId)) {
+			got, err := ctx.GetEntityClassById(tt.classId)
+			if !tt.wantErr(t, err, fmt.Sprintf("GetEntityClassById(%v)", tt.classId)) {
 				return
 			}
-			assert.Equalf(t, tt.want, got, "GetEntityClass(%v)", tt.classId)
+			assert.Equalf(t, tt.want, got, "GetEntityClassById(%v)", tt.classId)
 		})
 	}
 }
@@ -75,13 +75,13 @@ func TestGetEntityClass(t *testing.T) {
 func TestRegisterEntityClass(t *testing.T) {
 	// tearDown()
 	ctx := setUp("register_entity_class")
-	ec := &IcEntityClass{0, "user", "user info 1", "user_id"}
+	ec := &IcEntityClass{0, "user", "user info 1", "user_id", 1}
 	e2 := *ec
 	e2Want := e2
 	e2Want.ClassId = 1
 	// clear
 	_, err := ctx.engine.Exec("drop table ic_entity_class")
-	ctx.InitTable()
+	ctx.InitTable(ctx.engine)
 	if err != nil {
 		t.Error(err)
 	}

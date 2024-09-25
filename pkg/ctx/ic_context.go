@@ -2,6 +2,7 @@ package ctx
 
 import (
 	"fmt"
+	"github.com/everpan/mdmg/pkg/base/entity"
 	"github.com/everpan/mdmg/pkg/base/tenant"
 	"github.com/everpan/mdmg/pkg/base/v8runtime"
 	"github.com/everpan/mdmg/utils"
@@ -42,6 +43,7 @@ type IcContext struct {
 	v8Ctx         *v8.Context
 	engine        *xorm.Engine
 	moduleVersion string
+	EntityCtx     *entity.Context
 }
 
 func NewContextWithParams(
@@ -60,6 +62,9 @@ func NewContextWithParams(
 	}
 	if ctx.v8Ctx == nil {
 		ctx.CreateV8Context()
+	}
+	if ctx.EntityCtx == nil {
+		ctx.EntityCtx = entity.NewContext(engine, tenant.Idx)
 	}
 	return ctx
 }

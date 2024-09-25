@@ -35,6 +35,11 @@ func SendError(fc *fiber.Ctx, status int, e error) error {
 	return fc.Send(resp.Marshal())
 }
 
+func SendSuccess(fc *fiber.Ctx, data any) error {
+	resp := NewICodeResponse(0, "", data)
+	return fc.Send(resp.Marshal())
+}
+
 func AppRouterAdd(router fiber.Router, h *IcPathHandler) {
 	router.Group(h.Path, h.Handler.WrapHandler())
 }
