@@ -41,7 +41,11 @@ func SendSuccess(fc *fiber.Ctx, data any) error {
 }
 
 func AppRouterAdd(router fiber.Router, h *IcPathHandler) {
-	router.Group(h.Path, h.Handler.WrapHandler())
+	if h.Method != "" {
+		router.Add(h.Method, h.Path, h.Handler.WrapHandler())
+	} else {
+		router.Group(h.Path, h.Handler.WrapHandler())
+	}
 }
 
 func AppRouterAddMulti(router fiber.Router, handlers []*IcPathHandler) {

@@ -13,6 +13,7 @@ var EntityGroupHandler = &ctx.IcGroupPathHandler{
 	Handlers: []*ctx.IcPathHandler{
 		{
 			Path:    "/meta/:class?",
+			Method:  fiber.MethodGet,
 			Handler: metaDetail,
 		},
 		{

@@ -43,7 +43,7 @@ func Test_detail(t *testing.T) {
 			if tt.className != "" {
 				target2 = target + tt.className
 			}
-			req := httptest.NewRequest(fiber.MethodPost, target2, nil)
+			req := httptest.NewRequest(fiber.MethodGet, target2, nil)
 			resp, err := app.Test(req)
 			if nil != err {
 				assert.Contains(t, err.Error(), tt.wantErr)

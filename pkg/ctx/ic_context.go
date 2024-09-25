@@ -13,6 +13,7 @@ import (
 
 type IcPathHandler struct {
 	Path    string
+	Method  string
 	Handler IcHandler
 }
 
