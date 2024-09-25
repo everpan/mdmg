@@ -4,6 +4,7 @@ import (
 	"github.com/everpan/mdmg/pkg/base/entity"
 	"github.com/everpan/mdmg/pkg/base/tenant"
 	"os"
+	"strconv"
 	"testing"
 	"xorm.io/xorm"
 )
@@ -81,4 +82,21 @@ func TestBuildSeedDataForTest(t *testing.T) {
 		ClusterDesc: "user info desc", ClusterTableName: "user_info",
 		IsPrimary: false, TenantId: 1, Status: 1,
 	})
+	for i := 0; i < 50; i++ {
+		si := strconv.Itoa(i)
+		user = &entity.IcEntityClass{ClassName: "user_" + si, ClassDesc: "用户信息 " + si,
+			PkColumn: "user_id", TenantId: 1}
+		eClass, _ = eInst.RegisterEntityClass(user)
+
+		eInst.AddClusterTable(&entity.IcClusterTable{
+			ClassId: eClass.ClassId, ClusterName: "user account " + si,
+			ClusterDesc: "user account desc " + si, ClusterTableName: "user_account_" + si,
+			IsPrimary: true, TenantId: 1, Status: 1,
+		})
+		eInst.AddClusterTable(&entity.IcClusterTable{
+			ClassId: eClass.ClassId, ClusterName: "user info " + si,
+			ClusterDesc: "user info desc " + si, ClusterTableName: "user_info_" + si,
+			IsPrimary: false, TenantId: 1, Status: 1,
+		})
+	}
 }

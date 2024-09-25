@@ -38,6 +38,23 @@ func (h IcHandler) WrapHandler() fiber.Handler {
 	}
 }
 
+type IcPage struct {
+	Size   int `json:"size"`
+	Number int `json:"pageNumber"`
+	// Where      string // where id > 10 效率
+}
+
+func NewIcPage() *IcPage {
+	p := &IcPage{}
+	p.Reset()
+	return p
+}
+
+func (p *IcPage) Reset() {
+	p.Size = 20
+	p.Number = 0
+}
+
 type IcContext struct {
 	fc            *fiber.Ctx
 	tenant        *tenant.IcTenantInfo
@@ -45,6 +62,7 @@ type IcContext struct {
 	engine        *xorm.Engine
 	moduleVersion string
 	EntityCtx     *entity.Context
+	Page          *IcPage
 }
 
 func NewContextWithParams(
@@ -66,6 +84,9 @@ func NewContextWithParams(
 	}
 	if ctx.EntityCtx == nil {
 		ctx.EntityCtx = entity.NewContext(engine, tenant.Idx)
+	}
+	if ctx.Page == nil {
+		ctx.Page = NewIcPage()
 	}
 	return ctx
 }
