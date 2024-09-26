@@ -39,9 +39,9 @@ func (h IcHandler) WrapHandler() fiber.Handler {
 }
 
 type IcPage struct {
-	Size        int `json:"page_size"`
-	No          int `json:"page_no"`
-	Count       int `json:"page_count"` // 分页总数
+	PageSize    int `json:"page_size"`
+	PageNo      int `json:"page_no"`
+	PageCount   int `json:"page_count"` // 分页总数
 	RecordCount int `json:"record_count"`
 	// Where      string // where id > 10 效率
 }
@@ -53,15 +53,15 @@ func NewIcPage() *IcPage {
 }
 
 func (p *IcPage) Reset() {
-	p.Size = 20
-	p.No = 0
+	p.PageSize = 20
+	p.PageNo = 0
 }
 func (p *IcPage) CalCountOffset(recordCount int) (offset int) {
 	p.RecordCount = recordCount
-	if p.Size > 0 {
-		p.Count = (recordCount + p.Size - 1) / p.Size
+	if p.PageSize > 0 {
+		p.PageCount = (recordCount + p.PageSize - 1) / p.PageSize
 	}
-	offset = p.No * p.Size
+	offset = p.PageNo * p.PageSize
 	return
 }
 

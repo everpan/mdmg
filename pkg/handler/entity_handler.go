@@ -65,10 +65,10 @@ func metaList(c *ctx.IcContext) error {
 		c.Page.Reset()
 	} else {
 		sp := strings.Split(pageInfo, "-")
-		c.Page.No, _ = strconv.Atoi(sp[0])
-		c.Page.Size = 20
+		c.Page.PageNo, _ = strconv.Atoi(sp[0])
+		c.Page.PageSize = 20
 		if len(sp) > 1 {
-			c.Page.Size, _ = strconv.Atoi(sp[1])
+			c.Page.PageSize, _ = strconv.Atoi(sp[1])
 		}
 	}
 	// fmt.Printf("-- page %v\n", c.Page)
@@ -76,7 +76,7 @@ func metaList(c *ctx.IcContext) error {
 	offset := c.Page.CalCountOffset(int(count))
 
 	var eClasses []*entity.IcEntityClass
-	e := c.Engine().Limit(c.Page.Size, offset).Where("tenant_id = ?", c.Tenant().Idx).Find(&eClasses)
+	e := c.Engine().Limit(c.Page.PageSize, offset).Where("tenant_id = ?", c.Tenant().Idx).Find(&eClasses)
 	if nil != e {
 		return ctx.SendError(fc, fiber.StatusInternalServerError, e)
 	}
