@@ -54,14 +54,17 @@ func NewIcPage() *IcPage {
 
 func (p *IcPage) Reset() {
 	p.PageSize = 20
-	p.PageNo = 0
+	p.PageNo = 1
 }
 func (p *IcPage) CalCountOffset(recordCount int) (offset int) {
 	p.RecordCount = recordCount
 	if p.PageSize > 0 {
 		p.PageCount = (recordCount + p.PageSize - 1) / p.PageSize
 	}
-	offset = p.PageNo * p.PageSize
+	if p.PageNo <= 0 {
+		p.PageNo = 1
+	}
+	offset = (p.PageNo - 1) * p.PageSize
 	return
 }
 

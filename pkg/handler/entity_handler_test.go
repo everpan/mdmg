@@ -64,10 +64,11 @@ func Test_meta_list(t *testing.T) {
 		want    string
 	}{
 		{"page 0", "", 20, "data\":[{\"entity_class\":{\"class_id\":1"},
-		{"page 1", "/1-20", 20, "{\"code\":0,\"data\":[{\"entity_class\":{\"class_id\":21,"},
-		{"page 3, left 11", "/2-20", 11, "page\":{\"page_size\":20,\"page_no\":2,\"page_count\":3,"},
+		{"page 1", "/1-20", 20, "data\":[{\"entity_class\":{\"class_id\":1"},
+		{"page 1", "/2-20", 20, "{\"code\":0,\"data\":[{\"entity_class\":{\"class_id\":21,"},
+		{"page 3, left 11", "/3-20", 11, "page\":{\"page_size\":20,\"page_no\":3,\"page_count\":3,"},
 		{"page 99, no data", "/99-20", 0, "data\":[]"},
-		{"page 5, size 10 , left 1", "/5-10", 1, "{\"page_size\":10,\"page_no\":5,\"page_count\":6,\"record_count\":51}"},
+		{"page 5, size 10 , left 1", "/6-10", 1, "{\"page_size\":10,\"page_no\":6,\"page_count\":6,\"record_count\":51}"},
 	}
 	app := fiber.New()
 	ctx.AppRouterAddGroup(app, EntityGroupHandler)
