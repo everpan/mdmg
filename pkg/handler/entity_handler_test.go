@@ -21,7 +21,7 @@ func Test_meta_detail(t *testing.T) {
 		className string
 		wantErr   string
 	}{
-		{"invalid id empty", math.MaxInt32, "", "class not specified"},
+		{"invalid id empty", math.MaxInt32, "", "class name or id not specified"},
 		{"invalid id 0", 0, "", "gt zero"},
 		{"invalid id 99", 99, "", "not found"},
 		{"invalid id 1", 1, "", "{\"code\":0,\"data\":{\"entity_class\":{\"class_id\":1"},
@@ -33,7 +33,7 @@ func Test_meta_detail(t *testing.T) {
 	engine := CreateSeedDataSqlite3Engine("seed_data_test.db", false)
 	tenant.SetSysEngine(engine)
 
-	target := "/entity/meta/"
+	target := "/entity/meta/class/"
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -58,11 +58,16 @@ func Test_meta_detail(t *testing.T) {
 
 func Test_meta_list(t *testing.T) {
 	tests := []struct {
-		name  string
-		param string
-		want  string
+		name    string
+		param   string
+		retSize int
+		want    string
 	}{
-		{"page 0", "", "data\":[{\"entity_class\":{\"class_id\":1"},
+		{"page 0", "", 20, "data\":[{\"entity_class\":{\"class_id\":1"},
+		{"page 1", "/1-20", 20, "{\"code\":0,\"data\":[{\"entity_class\":{\"class_id\":21,"},
+		{"page 3, left 11", "/2-20", 11, "page\":{\"page_size\":20,\"page_no\":2,\"page_count\":3,"},
+		{"page 99, no data", "/99-20", 0, "data\":[]"},
+		{"page 5, size 10 , left 1", "/5-10", 1, "{\"page_size\":10,\"page_no\":5,\"page_count\":6,\"record_count\":51}"},
 	}
 	app := fiber.New()
 	ctx.AppRouterAddGroup(app, EntityGroupHandler)
@@ -87,7 +92,7 @@ func Test_meta_list(t *testing.T) {
 			e := json.Unmarshal(body, &r)
 			assert.Nil(t, e)
 
-			assert.Equal(t, 20, len(r.Data.([]any)))
+			assert.Equal(t, tt.retSize, len(r.Data.([]any)))
 		})
 	}
 }

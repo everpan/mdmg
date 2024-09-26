@@ -6,9 +6,10 @@ import (
 )
 
 type ICodeResponse struct {
-	Code    int    `json:"code"`
-	Message string `json:"message,omitempty"`
-	Data    any    `json:"data,omitempty"`
+	Code    int     `json:"code"`
+	Message string  `json:"message,omitempty"`
+	Data    any     `json:"data,omitempty"`
+	Page    *IcPage `json:"page,omitempty"`
 }
 
 func NewICodeResponse(code int, message string, data interface{}) *ICodeResponse {
@@ -37,6 +38,12 @@ func SendError(fc *fiber.Ctx, status int, e error) error {
 
 func SendSuccess(fc *fiber.Ctx, data any) error {
 	resp := NewICodeResponse(0, "", data)
+	return fc.Send(resp.Marshal())
+}
+
+func SendSuccessWithPage(fc *fiber.Ctx, data any, page IcPage) error {
+	resp := NewICodeResponse(0, "", data)
+	resp.Page = &page
 	return fc.Send(resp.Marshal())
 }
 

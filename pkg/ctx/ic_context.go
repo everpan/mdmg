@@ -39,8 +39,10 @@ func (h IcHandler) WrapHandler() fiber.Handler {
 }
 
 type IcPage struct {
-	Size   int `json:"size"`
-	Number int `json:"pageNumber"`
+	Size        int `json:"page_size"`
+	No          int `json:"page_no"`
+	Count       int `json:"page_count"` // 分页总数
+	RecordCount int `json:"record_count"`
 	// Where      string // where id > 10 效率
 }
 
@@ -52,7 +54,15 @@ func NewIcPage() *IcPage {
 
 func (p *IcPage) Reset() {
 	p.Size = 20
-	p.Number = 0
+	p.No = 0
+}
+func (p *IcPage) CalCountOffset(recordCount int) (offset int) {
+	p.RecordCount = recordCount
+	if p.Size > 0 {
+		p.Count = (recordCount + p.Size - 1) / p.Size
+	}
+	offset = p.No * p.Size
+	return
 }
 
 type IcContext struct {
@@ -101,6 +111,9 @@ func (c *IcContext) Engine() *xorm.Engine {
 }
 func (c *IcContext) EntityCtx() *entity.Context {
 	return c.entityCtx
+}
+func (c *IcContext) Tenant() *tenant.IcTenantInfo {
+	return c.tenant
 }
 func (c *IcContext) ModuleVersion() string {
 	return c.moduleVersion
