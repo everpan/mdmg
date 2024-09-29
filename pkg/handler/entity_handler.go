@@ -7,7 +7,6 @@ import (
 	"github.com/everpan/mdmg/pkg/base/log"
 	"github.com/everpan/mdmg/pkg/ctx"
 	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
 	"strconv"
 	"strings"
 )
@@ -124,18 +123,12 @@ func metaList(c *ctx.IcContext) error {
 }
 
 func metaCreate(c *ctx.IcContext) error {
-	fc := c.FiberCtx()
-	tenantId := c.Tenant().Idx
-	var err error
-	if len(fc.Body()) == 0 {
-		err = fmt.Errorf("no body")
-		return ctx.SendError(fc, fiber.StatusBadRequest, err)
-	}
-	logger.Info("meta add", zap.String("body", string(fc.Body())))
-	var meta = &entity.IcEntityMeta{}
-	err = json.Unmarshal(fc.Body(), meta)
-	if nil != err || meta.EntityClass == nil {
-		err = fmt.Errorf("body: %v, error: %v", string(fc.Body()), err)
+	var (
+		tenantId = c.Tenant().Idx
+		fc       = c.FiberCtx()
+	)
+	meta, err := parseMetaFromBody(fc)
+	if err != nil {
 		return ctx.SendError(fc, fiber.StatusBadRequest, err)
 	}
 	/* 先增加class｜可以只有class，再增加cluster*/
@@ -144,10 +137,18 @@ func metaCreate(c *ctx.IcContext) error {
 		err = fmt.Errorf("entity class id existed")
 		return ctx.SendError(fc, fiber.StatusBadRequest, err)
 	}
+	if len(strings.TrimSpace(meta.EntityClass.ClassName)) == 0 {
+		err = fmt.Errorf("entity class name is required")
+		return ctx.SendError(fc, fiber.StatusBadRequest, err)
+	}
 	meta.EntityClass.TenantId = tenantId
 	for _, table := range meta.ClusterTables {
 		if table.ClusterId != 0 {
 			err = fmt.Errorf("cluster table existed")
+			return ctx.SendError(fc, fiber.StatusBadRequest, err)
+		}
+		if len(strings.TrimSpace(table.ClusterTableName)) == 0 {
+			err = fmt.Errorf("cluster table name is required")
 			return ctx.SendError(fc, fiber.StatusBadRequest, err)
 		}
 		table.TenantId = tenantId
@@ -168,7 +169,28 @@ func metaCreate(c *ctx.IcContext) error {
 	return ctx.SendSuccess(fc, meta)
 }
 
+func parseMetaFromBody(fc *fiber.Ctx) (meta *entity.IcEntityMeta, err error) {
+	if len(fc.Body()) == 0 {
+		return nil, fmt.Errorf("no body")
+	}
+	meta = &entity.IcEntityMeta{}
+	err = json.Unmarshal(fc.Body(), meta)
+	if nil != err || meta.EntityClass == nil {
+		err = fmt.Errorf("body: %v, error: %v", string(fc.Body()), err)
+		return nil, err
+	}
+	return meta, nil
+}
+
 func metaDelete(c *ctx.IcContext) error {
-	// fc := c.FiberCtx()
+	fc := c.FiberCtx()
+	meta, err := parseMetaFromBody(fc)
+	if err != nil {
+		return ctx.SendError(fc, fiber.StatusBadRequest, err)
+	}
+	if meta.EntityClass.ClassId != 0 {
+		// del by class id
+	}
+
 	return nil
 }

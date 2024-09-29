@@ -21,6 +21,7 @@ type IcEntityClass struct {
 	ClassDesc string `json:"class_desc" xorm:"text"` // 关于实体的描述信息
 	PkColumn  string `json:"pk_column" xorm:"pk_column index"`
 	TenantId  uint32 `json:"tenant_id" xorm:"index"`
+	Status    int32  `json:"status" xorm:"index""` // 状态
 	// EntityUKColumn string `json:"entity_uk_column" xorm:"entity_uk_column index"` // 实体主键列名;统一实体的列类型为uint64，可以采用数据库自增
 	// EntityPrimaryTable string           `xorm:"entity_primary_table unique"`
 	// ClusterIdList []uint32 `json:"cluster_id_list,omitempty" xorm:"cluster_id_list text default ''"` // 属性表，第一个为主属性表; 所以的簇属性必需包含与`PkColumn`同名的主键字段
