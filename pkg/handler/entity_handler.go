@@ -1,14 +1,18 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/everpan/mdmg/pkg/base/entity"
+	"github.com/everpan/mdmg/pkg/base/log"
 	"github.com/everpan/mdmg/pkg/ctx"
 	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
 	"strconv"
 	"strings"
 )
 
+var logger = log.GetLogger()
 var EntityGroupHandler = &ctx.IcGroupPathHandler{
 	GroupPath: "/entity",
 	Handlers: []*ctx.IcPathHandler{
@@ -18,13 +22,29 @@ var EntityGroupHandler = &ctx.IcGroupPathHandler{
 			Handler: metaList,
 		},
 		{
-			Path:    "/meta/class/:classNameOrId?",
+			Path:    "/meta/detail/:classNameOrId?",
 			Method:  fiber.MethodGet,
 			Handler: metaDetail,
+		},
+		{
+			Path:    "/meta",
+			Method:  fiber.MethodPost, // 新增
+			Handler: metaCreate,
+		},
+		{
+			Path:    "/meta",
+			Method:  fiber.MethodPut, // modify
+			Handler: metaDelete,
+		},
+		{
+			Path:    "/meta",
+			Method:  fiber.MethodPut, // modify
+			Handler: metaDelete,
 		},
 	},
 }
 
+// metaDetail 通过class name or id获取元信息
 func metaDetail(c *ctx.IcContext) error {
 	var (
 		meta          = entity.IcEntityMeta{}
@@ -58,6 +78,7 @@ func metaDetail(c *ctx.IcContext) error {
 	return ctx.SendSuccess(fc, meta)
 }
 
+// metaList 按照 ic_entity_class 列出与之相关的 ic_cluster_table
 func metaList(c *ctx.IcContext) error {
 	fc := c.FiberCtx()
 	pageInfo := fc.Params("page")
@@ -100,4 +121,54 @@ func metaList(c *ctx.IcContext) error {
 		}
 	*/
 	return ctx.SendSuccessWithPage(fc, metas, *c.Page)
+}
+
+func metaCreate(c *ctx.IcContext) error {
+	fc := c.FiberCtx()
+	tenantId := c.Tenant().Idx
+	var err error
+	if len(fc.Body()) == 0 {
+		err = fmt.Errorf("no body")
+		return ctx.SendError(fc, fiber.StatusBadRequest, err)
+	}
+	logger.Info("meta add", zap.String("body", string(fc.Body())))
+	var meta = &entity.IcEntityMeta{}
+	err = json.Unmarshal(fc.Body(), meta)
+	if nil != err || meta.EntityClass == nil {
+		err = fmt.Errorf("body: %v, error: %v", string(fc.Body()), err)
+		return ctx.SendError(fc, fiber.StatusBadRequest, err)
+	}
+	/* 先增加class｜可以只有class，再增加cluster*/
+	// [1] 校验，所有id必需为0; 同时将tenant id填入
+	if meta.EntityClass.ClassId != 0 {
+		err = fmt.Errorf("entity class id existed")
+		return ctx.SendError(fc, fiber.StatusBadRequest, err)
+	}
+	meta.EntityClass.TenantId = tenantId
+	for _, table := range meta.ClusterTables {
+		if table.ClusterId != 0 {
+			err = fmt.Errorf("cluster table existed")
+			return ctx.SendError(fc, fiber.StatusBadRequest, err)
+		}
+		table.TenantId = tenantId
+	}
+	// [2] register class
+	_, err = c.EntityCtx().RegisterEntityClass(meta.EntityClass)
+	if nil != err {
+		return ctx.SendError(fc, fiber.StatusInternalServerError, err)
+	}
+	// [3] register cluster table
+	for _, table := range meta.ClusterTables {
+		table.ClassId = meta.EntityClass.ClassId
+		err = c.EntityCtx().AddClusterTable(table)
+		if err != nil {
+			return ctx.SendError(fc, fiber.StatusInternalServerError, err)
+		}
+	}
+	return ctx.SendSuccess(fc, meta)
+}
+
+func metaDelete(c *ctx.IcContext) error {
+	// fc := c.FiberCtx()
+	return nil
 }

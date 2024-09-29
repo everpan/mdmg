@@ -1,16 +1,21 @@
 package handler
 
 import (
+	"bytes"
 	"encoding/json"
+	"github.com/everpan/mdmg/pkg/base/entity"
 	"github.com/everpan/mdmg/pkg/base/tenant"
 	"github.com/everpan/mdmg/pkg/ctx"
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"math"
+	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"testing"
+	"xorm.io/xorm"
 )
 
 func Test_meta_detail(t *testing.T) {
@@ -33,7 +38,7 @@ func Test_meta_detail(t *testing.T) {
 	engine := CreateSeedDataSqlite3Engine("seed_data_test.db", false)
 	tenant.SetSysEngine(engine)
 
-	target := "/entity/meta/class/"
+	target := "/entity/meta/detail/"
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -94,6 +99,65 @@ func Test_meta_list(t *testing.T) {
 			assert.Nil(t, e)
 
 			assert.Equal(t, tt.retSize, len(r.Data.([]any)))
+		})
+	}
+}
+
+func clearData(engine *xorm.Engine) {
+	sql := "delete from ic_entity_class where class_name='only_entity_class_test' or class_name='entity_class_test'"
+	engine.Exec(sql)
+	sql = "delete from ic_cluster_table where cluster_table_name='cluster_table_name'"
+	engine.Exec(sql)
+}
+func Test_metaAdd(t *testing.T) {
+
+	tests := []struct {
+		name string
+		meta *entity.IcEntityMeta
+		body string //优先
+		want string
+	}{
+		{"body is null", nil, "null", "body: null"},
+		{"body fmt error", nil, "bad fmt", "invalid character"},
+		{"no body", nil, " ", "{\"code\":-1,\"message\":\"no body\"}"},
+		{"only entity class", &entity.IcEntityMeta{EntityClass: &entity.IcEntityClass{ClassName: "only_entity_class_test", PkColumn: "idx"}},
+			"", "\"tenant_id\":1"},
+		{"same entity class throw constraint", &entity.IcEntityMeta{EntityClass: &entity.IcEntityClass{ClassName: "only_entity_class_test", PkColumn: "idx"}},
+			"", "UNIQUE constraint"},
+		{"with cluster table", &entity.IcEntityMeta{EntityClass: &entity.IcEntityClass{ClassName: "entity_class_test", PkColumn: "idx"},
+			ClusterTables: []*entity.IcClusterTable{{ClusterTableName: "cluster_table_name"}}},
+			"", "\"code\":0"},
+	}
+	app := fiber.New()
+	ctx.AppRouterAddGroup(app, EntityGroupHandler)
+	engine := CreateSeedDataSqlite3Engine("seed_data_test.db", false)
+	clearData(engine)
+	tenant.SetSysEngine(engine)
+	target := "/entity/meta/"
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var req *http.Request
+			var buf bytes.Buffer
+			if len(tt.body) > 0 {
+				buf.WriteString(strings.TrimSpace(tt.body))
+			} else {
+				json.NewEncoder(&buf).Encode(tt.meta)
+			}
+			req = httptest.NewRequest(fiber.MethodPost, target, &buf)
+			resp, err := app.Test(req)
+			if err != nil {
+				assert.Contains(t, err.Error(), tt.want)
+			}
+			body, _ := io.ReadAll(resp.Body)
+			// t.Log(string(body))
+			assert.Contains(t, string(body), tt.want)
+			t.Log(string(body))
+			var r = ctx.ICodeResponse{}
+			e := json.Unmarshal(body, &r)
+			assert.Nil(t, e)
+
+			// assert.Equal(t, tt.retSize, len(r.Data.([]any)))
 		})
 	}
 }
