@@ -26,10 +26,9 @@ func Test_meta_detail(t *testing.T) {
 		className string
 		wantErr   string
 	}{
-		{"invalid id empty", math.MaxInt32, "", "class name or id not specified"},
 		{"invalid id 0", 0, "", "gt zero"},
-		{"invalid id 99", 99, "", "not found"},
-		{"invalid id 1", 1, "", "{\"code\":0,\"data\":{\"entity_class\":{\"class_id\":1"},
+		{"invalid id 990", 990, "", "not found"},
+		{"fetch id 1", 1, "", "{\"code\":0,\"data\":{\"entity_class\":{\"class_id\":1"},
 		{"class name: user_not_exist", 0, "user_not_exist", "className:user_not_exist tenantId:1 not found"},
 		{"class name: user", 0, "user", "\"cluster_tables\":[{\"class_id"},
 	}
@@ -38,7 +37,7 @@ func Test_meta_detail(t *testing.T) {
 	engine := CreateSeedDataSqlite3Engine("seed_data_test.db", false)
 	tenant.SetSysEngine(engine)
 
-	target := "/entity/meta/detail/"
+	target := "/entity/meta/"
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -69,18 +68,18 @@ func Test_meta_list(t *testing.T) {
 		want    string
 	}{
 		{"page 0", "", 20, "data\":[{\"entity_class\":{\"class_id\":1"},
-		{"page 1", "/1-20", 20, "data\":[{\"entity_class\":{\"class_id\":1"},
-		{"page 1", "/2-20", 20, "{\"code\":0,\"data\":[{\"entity_class\":{\"class_id\":21,"},
-		{"page 3, left 11", "/3-20", 11, "page\":{\"page_size\":20,\"page_no\":3,\"page_count\":3,"},
-		{"page 99, no data", "/99-20", 0, "data\":[]"},
-		{"page 5, size 10 , left 1", "/6-10", 1, "{\"page_size\":10,\"page_no\":6,\"page_count\":6,\"record_count\":51}"},
+		{"page 1", "/20/1", 20, "data\":[{\"entity_class\":{\"class_id\":1"},
+		{"page 1", "/20/2", 20, "{\"code\":0,\"data\":[{\"entity_class\":{\"class_id\":21,"},
+		{"page 3, left 11", "/20/3", 11, "page\":{\"page_size\":20,\"page_no\":3,\"page_count\":3,"},
+		{"page 99, no data", "/20/99", 0, "data\":[]"},
+		{"page 5, size 10 , left 1", "/10/6", 1, "{\"page_size\":10,\"page_no\":6,\"page_count\":6,\"record_count\":51}"},
 	}
 	app := fiber.New()
 	ctx.AppRouterAddGroup(app, EntityGroupHandler)
 	engine := CreateSeedDataSqlite3Engine("seed_data_test.db", false)
 	tenant.SetSysEngine(engine)
 
-	target := "/entity/meta/list"
+	target := "/entity/meta"
 	var target2 string
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -91,7 +90,7 @@ func Test_meta_list(t *testing.T) {
 				assert.Contains(t, err.Error(), tt.want)
 			}
 			body, _ := io.ReadAll(resp.Body)
-			// t.Log(string(body))
+			t.Log(string(body))
 			assert.Contains(t, string(body), tt.want)
 
 			var r = ctx.ICodeResponse{}

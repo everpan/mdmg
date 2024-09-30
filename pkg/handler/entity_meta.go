@@ -16,45 +16,42 @@ var EntityGroupHandler = &ctx.IcGroupPathHandler{
 	GroupPath: "/entity",
 	Handlers: []*ctx.IcPathHandler{
 		{
-			Path:    "/meta/list/:page?", // page like 2-20, pageNum = 2, pageSize: 20
+			Path:    "/meta/:classNameOrId?/:pageNum?",
 			Method:  fiber.MethodGet,
-			Handler: metaList,
-		},
-		{
-			Path:    "/meta/detail/:classNameOrId?",
-			Method:  fiber.MethodGet,
-			Handler: metaDetail,
+			Handler: metaDetailOrList,
 		},
 		{
 			Path:    "/meta",
-			Method:  fiber.MethodPost, // 新增
+			Method:  fiber.MethodPost,
 			Handler: metaCreate,
 		},
 		{
 			Path:    "/meta",
-			Method:  fiber.MethodPut, // modify
-			Handler: metaDelete,
+			Method:  fiber.MethodPut,
+			Handler: metaUpdate,
 		},
 		{
 			Path:    "/meta",
-			Method:  fiber.MethodPut, // modify
+			Method:  fiber.MethodDelete,
 			Handler: metaDelete,
 		},
 	},
 }
 
-// metaDetail 通过class name or id获取元信息
-func metaDetail(c *ctx.IcContext) error {
+// metaDetailOrList 通过class name or id获取元信息
+func metaDetailOrList(c *ctx.IcContext) error {
 	var (
 		meta          = entity.IcEntityMeta{}
 		err           error
 		fc            = c.FiberCtx()
 		classNameOrId = fc.Params("classNameOrId")
+		pageNum       = fc.Params("pageNum")
 	)
 
-	if classNameOrId == "" {
-		return ctx.SendError(fc, fiber.StatusBadRequest,
-			fmt.Errorf("class name or id not specified"))
+	if classNameOrId == "" || len(pageNum) > 0 {
+		//return ctx.SendError(fc, fiber.StatusBadRequest,
+		//	fmt.Errorf("class name or id not specified"))
+		return metaList(c)
 	}
 	classId, err := strconv.ParseUint(classNameOrId, 10, 32)
 	if classId == 0 && err == nil {
@@ -79,17 +76,22 @@ func metaDetail(c *ctx.IcContext) error {
 
 // metaList 按照 ic_entity_class 列出与之相关的 ic_cluster_table
 func metaList(c *ctx.IcContext) error {
-	fc := c.FiberCtx()
-	pageInfo := fc.Params("page")
-	if pageInfo == "" {
+	var (
+		fc       = c.FiberCtx()
+		pageSize = fc.Params("classNameOrId")
+		pageNum  = fc.Params("pageNum")
+	)
+	if pageSize == "" {
 		c.Page.Reset()
 	} else {
-		sp := strings.Split(pageInfo, "-")
-		c.Page.PageNo, _ = strconv.Atoi(sp[0])
-		c.Page.PageSize = 20
-		if len(sp) > 1 {
-			c.Page.PageSize, _ = strconv.Atoi(sp[1])
-		}
+		//sp := strings.Split(pageInfo, "-")
+		//c.Page.PageNo, _ = strconv.Atoi(sp[0])
+		//c.Page.PageSize = 20
+		//if len(sp) > 1 {
+		//	c.Page.PageSize, _ = strconv.Atoi(sp[1])
+		//}
+		c.Page.PageSize, _ = strconv.Atoi(pageSize)
+		c.Page.PageNo, _ = strconv.Atoi(pageNum)
 	}
 	// fmt.Printf("-- page %v\n", c.Page)
 	count, _ := c.Engine().Count(&entity.IcEntityClass{TenantId: c.Tenant().Idx})
@@ -180,6 +182,36 @@ func parseMetaFromBody(fc *fiber.Ctx) (meta *entity.IcEntityMeta, err error) {
 		return nil, err
 	}
 	return meta, nil
+}
+func metaUpdate(c *ctx.IcContext) error {
+	fc := c.FiberCtx()
+	// eCtx := c.EntityCtx()
+	meta, err := parseMetaFromBody(fc)
+	if err != nil {
+		return ctx.SendError(fc, fiber.StatusBadRequest, err)
+	}
+	// check id > 0
+	if meta.EntityClass.ClassId == 0 {
+		return fmt.Errorf("entity class id required")
+	}
+	for _, table := range meta.ClusterTables {
+		if table.ClusterId == 0 {
+			return fmt.Errorf("cluster table id required")
+		}
+	}
+	// update
+	engine := c.Engine()
+	_, err = engine.Update(meta.EntityClass)
+	if err != nil {
+		return ctx.SendError(fc, fiber.StatusInternalServerError, err)
+	}
+	for _, table := range meta.ClusterTables {
+		_, err = engine.Update(table)
+		if err != nil {
+			return ctx.SendError(fc, fiber.StatusInternalServerError, err)
+		}
+	}
+	return ctx.SendSuccess(fc, meta)
 }
 
 func metaDelete(c *ctx.IcContext) error {
