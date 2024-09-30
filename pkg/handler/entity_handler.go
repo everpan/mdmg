@@ -70,7 +70,7 @@ func metaDetail(c *ctx.IcContext) error {
 	if nil != err {
 		return ctx.SendError(fc, fiber.StatusBadRequest, err)
 	}
-	meta.ClusterTables, err = entityCtx.GetClusterTables(meta.EntityClass.ClassId)
+	meta.ClusterTables, err = entityCtx.GetClusterTablesByClassId(meta.EntityClass.ClassId)
 	if nil != err {
 		return ctx.SendError(fc, fiber.StatusBadRequest, err)
 	}
@@ -102,7 +102,7 @@ func metaList(c *ctx.IcContext) error {
 	}
 	metas := make([]*entity.IcEntityMeta, len(eClasses))
 	for i, class := range eClasses {
-		tables, _ := c.EntityCtx().GetClusterTables(class.ClassId)
+		tables, _ := c.EntityCtx().GetClusterTablesByClassId(class.ClassId)
 		metas[i] = &entity.IcEntityMeta{
 			EntityClass:   class,
 			ClusterTables: tables,
@@ -184,12 +184,22 @@ func parseMetaFromBody(fc *fiber.Ctx) (meta *entity.IcEntityMeta, err error) {
 
 func metaDelete(c *ctx.IcContext) error {
 	fc := c.FiberCtx()
+	eCtx := c.EntityCtx()
 	meta, err := parseMetaFromBody(fc)
 	if err != nil {
 		return ctx.SendError(fc, fiber.StatusBadRequest, err)
 	}
+	if len(meta.ClusterTables) > 0 {
+		// 只删除cluster table
+		// 约束：class id 一致性
+
+	}
 	if meta.EntityClass.ClassId != 0 {
 		// del by class id
+		eCtx.DelEntityClassById(meta.EntityClass.ClassId)
+	} else if len(strings.TrimSpace(meta.EntityClass.ClassName)) != 0 {
+		// del by class name
+		eCtx.DelEntityClassByName(meta.EntityClass.ClassName)
 	}
 
 	return nil

@@ -38,7 +38,7 @@ type IcClusterTable struct {
 	ClusterTableName string `json:"table" xorm:"unique"`                   // unique 簇表名； 至少包含EntityPKColumn
 	IsPrimary        bool   `json:"is_primary" xorm:"bool"`                // 是否是主簇，主簇的key通常是自增
 	TenantId         uint32 `json:"tenant_id" xorm:"index"`
-	Status           int32  `json:"status" xorm:"index""` // 状态
+	Status           int32  `json:"status" xorm:"index"` // 状态
 }
 type IcEntityMeta struct {
 	EntityClass   *IcEntityClass    `json:"entity_class"`
@@ -148,6 +148,45 @@ func (ctx *Context) GetEntityClassByName(className string) (*IcEntityClass, erro
 	return ec, nil
 }
 
+func (ctx *Context) DelEntityClassById(classId uint32) error {
+	err := ctx.DelAllClusterTableByClassId(classId)
+	if err != nil {
+		return err
+	}
+	sql := "delete from ic_entity_class where class_id = ? and tenant_id = ?"
+	_, err = ctx.engine.Exec(sql, classId, ctx.tenantId)
+	ctx.entityClassCache.Release(classId)
+	return err
+}
+
+func (ctx *Context) DelEntityClassByName(className string) error {
+	entityClass, err := ctx.GetEntityClassByName(className)
+	if nil != err {
+		return err
+	}
+	return ctx.DelEntityClassById(entityClass.ClassId)
+}
+
+func (ctx *Context) DelClusterTableById(clusterId uint32) error {
+	sql := "delete from ic_cluster_table where cluster_id = ? and tenant_id = ?"
+	_, err := ctx.engine.Exec(sql, clusterId, ctx.tenantId)
+	return err
+}
+
+func (ctx *Context) DelAllClusterTableByClassId(classId uint32) error {
+	sql := "delete from ic_cluster_table where class_id = ? and tenant_id = ?"
+	_, err := ctx.engine.Exec(sql, classId, ctx.tenantId)
+	return err
+}
+
+func (ctx *Context) DelClusterTableByTableName(clusterTableName string) error {
+	clusterTable, err := ctx.GetClusterTableByClusterName(clusterTableName)
+	if nil != err {
+		return err
+	}
+	return ctx.DelClusterTableById(clusterTable.ClusterId)
+}
+
 // AddClusterTableWithoutCheckClassId classId == 0 的情况下，注册簇属性表
 func (ctx *Context) AddClusterTableWithoutCheckClassId(ct *IcClusterTable) error {
 	if ct.ClusterId != 0 {
@@ -177,14 +216,26 @@ func (ctx *Context) AddClusterTable(ct *IcClusterTable) error {
 	return ctx.AddClusterTableWithoutCheckClassId(ct)
 }
 
-func (ctx *Context) GetClusterTables(classId uint32) ([]*IcClusterTable, error) {
+func (ctx *Context) GetClusterTablesByClassId(classId uint32) ([]*IcClusterTable, error) {
 	tables := make([]*IcClusterTable, 0)
 	err := ctx.engine.Where("class_id = ? and tenant_id = ?", classId, ctx.tenantId).Find(&tables)
 	return tables, err
 }
 
 func (ctx *Context) GetPrimaryClusterTable(classId uint32) (*IcClusterTable, error) {
-	table := &IcClusterTable{ClassId: classId, IsPrimary: true}
+	table := &IcClusterTable{ClassId: classId, IsPrimary: true, TenantId: ctx.tenantId}
+	ok, err := ctx.engine.Get(table)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		return table, nil
+	}
+	return nil, nil
+}
+
+func (ctx *Context) GetClusterTableByClusterName(tableName string) (*IcClusterTable, error) {
+	table := &IcClusterTable{ClusterTableName: tableName, TenantId: ctx.tenantId}
 	ok, err := ctx.engine.Get(table)
 	if err != nil {
 		return nil, err
@@ -198,7 +249,7 @@ func (ctx *Context) GetPrimaryClusterTable(classId uint32) (*IcClusterTable, err
 // CreateViewTable 以主表将所有簇表构建成view试图
 // force 是否强制删除重建
 func (ctx *Context) CreateViewTable(classId uint32, force bool) error {
-	cTables, err := ctx.GetClusterTables(classId)
+	cTables, err := ctx.GetClusterTablesByClassId(classId)
 	if nil != err {
 		return err
 	}

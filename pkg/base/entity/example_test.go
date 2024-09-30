@@ -77,7 +77,7 @@ func TestRegister(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Greater(t, ct2.ClusterId, ct1.ClusterId)
 
-	tables, err := ctx.GetClusterTables(ec.ClassId)
+	tables, err := ctx.GetClusterTablesByClassId(ec.ClassId)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(tables))
 	primaryTable := FilterPrimaryClusterTable(nil)
