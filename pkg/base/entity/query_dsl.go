@@ -97,7 +97,7 @@ func (builder *Builder) Select(selItems SelectDML) *Builder {
 	return builder
 }
 
-func (builder *Builder) selectSQL(buf *bytes.Buffer, selItems SelectDML) *Builder {
+func (builder *Builder) selectSimpleSQL(buf *bytes.Buffer, selItems SelectDML) *Builder {
 	buf.WriteString("select ")
 	for i, item := range selItems {
 		if i > 0 && len(item) > 0 {
@@ -143,7 +143,7 @@ func (builder *Builder) limitSQL(buf *bytes.Buffer, limit LimitDML) *Builder {
 	if len(limit) == 0 {
 		return builder
 	}
-	buf.WriteString(" limit ")
+	buf.WriteString("limit ")
 	buf.WriteString(strconv.FormatUint(uint64(limit[0]), 10))
 	if len(limit) > 1 {
 		buf.WriteByte(',')
@@ -153,10 +153,13 @@ func (builder *Builder) limitSQL(buf *bytes.Buffer, limit LimitDML) *Builder {
 }
 
 func (builder *Builder) SQL() (string, error) {
-	builder.selectSQL(builder.buf, builder.query.Select)
-	builder.isSubWhere = false
+	builder.Clear()
+	builder.selectSimpleSQL(builder.buf, builder.query.Select)
+	builder.buf.WriteByte('\n')
 	builder.whereSQL(builder.buf, builder.query.Wheres)
+	builder.buf.WriteByte('\n')
 	builder.orderBySQL(builder.buf, builder.query.Orders)
+	builder.buf.WriteByte('\n')
 	builder.limitSQL(builder.buf, builder.query.Limit)
 	return builder.buf.String(), nil
 }

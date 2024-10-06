@@ -32,13 +32,36 @@ func TestQueryDSL_BuildWhere(t *testing.T) {
 		{"sub condition", []*WhereDML{ws[0], w0, ws[1]},
 			`where col1 = "val1" and (col1 = "val1" and col2 = "val2") and col2 = "val2"`},
 	}
-	q := NewBuilder()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			q := NewBuilder()
 			buf := bytes.Buffer{}
 			q.Clear()
 			q.whereSQL(&buf, tt.wheres)
 			assert.Equalf(t, tt.result, buf.String(), "Where()")
+		})
+	}
+}
+
+func TestBuilder_selectSQL(t *testing.T) {
+	tests := []struct {
+		name     string
+		selItems SelectDML
+		want     string
+	}{
+		{"0 item", nil, "select "},
+		{"1 item", []string{"a"}, "select a"},
+		{"3 items", []string{"a", "b", "c"}, "select a,b,c"},
+		{"alias", []string{"a as a"}, "select a as a"},
+		{"table scope item", []string{"t.a as a"}, "select t.a as a"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q := NewBuilder()
+			buf := bytes.Buffer{}
+			q.selectSimpleSQL(&buf, tt.selItems)
+			assert.Equalf(t, tt.want, buf.String(), "selectSimpleSQL(%v)", tt.selItems)
 		})
 	}
 }
