@@ -28,8 +28,8 @@ func TestRegister(t *testing.T) {
 	if nil != err {
 		t.Fatal(err)
 	}
-	ctx := NewContext(engine)
-	ctx.InitTable()
+	ctx := NewContext(engine, 1)
+	ctx.InitTable(engine)
 	uea := &UserEmailAccount{}
 	una := &UserNickNameAccount{}
 	engine.CreateTables(uea)

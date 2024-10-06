@@ -21,7 +21,7 @@ func setUp(tName string) *Context {
 		fmt.Printf("failed to setup test engine: %v", err.Error())
 	}
 	engine.ShowSQL(true)
-	ctx := NewContext(engine)
+	ctx := NewContext(engine, 1)
 	ctx.InitTable(engine)
 	return ctx
 }
@@ -75,7 +75,7 @@ func TestGetEntityClass(t *testing.T) {
 func TestRegisterEntityClass(t *testing.T) {
 	// tearDown()
 	ctx := setUp("register_entity_class")
-	ec := &IcEntityClass{0, "user", "user info 1", "user_id", 1}
+	ec := &IcEntityClass{ClassName: "user", ClassDesc: "user info 1", PkColumn: "user_id", TenantId: 1}
 	e2 := *ec
 	e2Want := e2
 	e2Want.ClassId = 1
