@@ -3,8 +3,8 @@ package handler
 import (
 	"github.com/everpan/mdmg/pkg/base/log"
 	"github.com/everpan/mdmg/pkg/base/tenant"
+	"github.com/everpan/mdmg/pkg/config"
 	"github.com/everpan/mdmg/pkg/ctx"
-	"github.com/everpan/mdmg/web/config"
 	"github.com/gofiber/fiber/v2"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"

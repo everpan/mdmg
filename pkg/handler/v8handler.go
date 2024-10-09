@@ -3,9 +3,9 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"github.com/everpan/mdmg/pkg/config"
 	"github.com/everpan/mdmg/pkg/ctx"
 	"github.com/everpan/mdmg/utils"
-	"github.com/everpan/mdmg/web/config"
 	"github.com/gofiber/fiber/v2"
 	"io/fs"
 	"os"
