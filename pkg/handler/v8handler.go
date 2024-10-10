@@ -14,9 +14,21 @@ import (
 	"strings"
 )
 
-var ICoderHandler = ctx.IcPathHandler{
-	Path:    "/v1/icode/:modVer/:jsFile/*",
-	Handler: icodeHandler,
+var (
+	ICoderHandler = ctx.IcPathHandler{
+		Path:    "/v1/icode/:modVer/:jsFile/*",
+		Handler: icodeHandler,
+	}
+	gConfig = config.ICodeGlobalConfig
+)
+
+func init() {
+	// 本模块下需要的一些配置
+	sectionConfig := gConfig.AddSection("js-module", "JS模块")
+	sectionConfig.AddStringSchema("js-module.root-path", "根目录", "./js-api")
+	sectionConfig.AddEnumSchema("js-module.version-in-path", "", "show", config.EnumDesc{
+		"show": "显式展示版本", "hidden": "隐藏版本",
+	})
 }
 
 func icodeHandler(c *ctx.IcContext) error {

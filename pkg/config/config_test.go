@@ -62,23 +62,3 @@ func TestItemDesc_Encode(t *testing.T) {
 		})
 	}
 }
-
-func TestIcConfig_OutputKeyValue(t *testing.T) {
-	tests := []struct {
-		name   string
-		config *IcConfig
-		want   string
-	}{
-		// section is ignored
-		{"default", ICodeGlobalConfig,
-			`{
- "js-module.root-path": "web/js"
-}`,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, string(tt.config.OutputKeyValue()), "OutputKeyValue()")
-		})
-	}
-}

@@ -21,6 +21,7 @@ type ItemDesc struct {
 
 type EnumDesc map[string]string
 
+/*
 func (itemDesc *ItemDesc) Encode() []byte {
 	buf := new(bytes.Buffer)
 	encoder := json.NewEncoder(buf)
@@ -31,6 +32,7 @@ func (itemDesc *ItemDesc) Encode() []byte {
 	buf.Truncate(buf.Len() - 1)
 	return buf.Bytes()
 }
+*/
 
 type Schema struct {
 	Item     string   `json:"-"` // the key
@@ -44,7 +46,8 @@ type Schema struct {
 type SchemaMap = map[string]*Schema
 
 type IcConfig struct {
-	sMap SchemaMap
+	section string
+	sMap    SchemaMap
 }
 
 var (
@@ -68,12 +71,28 @@ func (sc *Schema) GetValue() string {
 	}
 	return sc.Value
 }
+
+func (sc *Schema) Update(schema *Schema, forceUpdateValue bool) {
+	sc.Desc = schema.Desc
+	sc.Type = schema.Type
+	sc.EnumDesc = schema.EnumDesc
+	if forceUpdateValue {
+		sc.Value = schema.Value
+	}
+	sc.Default = schema.Default
+}
+
 func NewIConfig() *IcConfig {
 	return &IcConfig{
 		sMap: SchemaMap{},
 	}
 }
-func NewItemSchema(item, desc string, typ ValueType, val, def string) *Schema {
+func NewItemSchema(section, item, desc string, typ ValueType, val, def string) *Schema {
+	if typ == CategoryType {
+		item = section
+	} else if len(section) > 0 {
+		item = section + "." + item
+	}
 	return &Schema{
 		item, desc, typ, nil, val, def,
 	}
@@ -81,11 +100,6 @@ func NewItemSchema(item, desc string, typ ValueType, val, def string) *Schema {
 
 func init() {
 	ICodeGlobalConfig.AddSection("system", "系统")
-	ICodeGlobalConfig.AddSection("js-module", "JS模块")
-	ICodeGlobalConfig.AddStringSchema("js-module.root-path", "根目录", "web/js")
-	ICodeGlobalConfig.AddEnumSchema("js-module.version-in-path",
-		"模块路径中是否有版本，如：mod-1.3.4", "true",
-		EnumDesc{"true": "包含", "false": "不包含，需要另外的映射"})
 }
 func (c *IcConfig) GetSchema(key string) *Schema {
 	sc, ok := c.sMap[key]
@@ -210,26 +224,46 @@ func (c *IcConfig) OutputKeyValue() []byte {
 func (c *IcConfig) AddSchema(schema *Schema) {
 	c.sMap[schema.Item] = schema
 }
-func (c *IcConfig) AddSection(sec, desc string) {
-	c.sMap[sec] = NewItemSchema(sec, desc, CategoryType, "", "")
+func (c *IcConfig) ReplaceSchema(schema *Schema) {
+	sc, ok := c.sMap[schema.Item]
+	if !ok {
+		c.AddSchema(schema)
+		return
+	}
+	sc.Update(schema, false)
+}
+func (c *IcConfig) ReplaceSchemaAndValue(schema *Schema) {
+	sc, ok := c.sMap[schema.Item]
+	if !ok {
+		c.AddSchema(schema)
+		return
+	}
+	sc.Update(schema, true)
+}
+func (c *IcConfig) AddSection(sec, desc string) *IcConfig {
+	c.ReplaceSchema(NewItemSchema(sec, "", desc, CategoryType, "", ""))
+	return &IcConfig{
+		section: sec,
+		sMap:    c.sMap,
+	}
 }
 func (c *IcConfig) AddStringSchema(item, desc, defaultValue string) {
-	c.sMap[item] = NewItemSchema(item, desc, StringType, "", defaultValue)
+	c.ReplaceSchema(NewItemSchema(c.section, item, desc, StringType, "", defaultValue))
 }
 func (c *IcConfig) AddNumberSchema(item, desc, defaultValue string) {
-	c.sMap[item] = NewItemSchema(item, desc, NumberType, "0", defaultValue)
+	c.ReplaceSchema(NewItemSchema(c.section, item, desc, NumberType, "0", defaultValue))
 }
 func (c *IcConfig) AddFloatSchema(item, desc, defaultValue string) {
-	c.sMap[item] = NewItemSchema(item, desc, FloatType, "0.0", defaultValue)
+	c.ReplaceSchema(NewItemSchema(c.section, item, desc, FloatType, "0.0", defaultValue))
 }
 func (c *IcConfig) AddBooleanSchema(item, desc, defaultValue string) {
-	c.sMap[item] = NewItemSchema(item, desc, BooleanType, "false", defaultValue)
+	c.ReplaceSchema(NewItemSchema(c.section, item, desc, BooleanType, "false", defaultValue))
 }
 
 func (c *IcConfig) AddEnumSchema(item, desc, defaultValue string, enumDesc EnumDesc) {
-	schema := NewItemSchema(item, desc, EnumType, "", defaultValue)
+	schema := NewItemSchema(c.section, item, desc, EnumType, "", defaultValue)
 	schema.EnumDesc = enumDesc
-	c.sMap[item] = schema
+	c.ReplaceSchema(schema)
 }
 
 var DefaultConfig = Config{
