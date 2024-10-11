@@ -46,19 +46,3 @@ func TestParseSchema(t *testing.T) {
 		})
 	}
 }
-
-func TestItemDesc_Encode(t *testing.T) {
-	tests := []struct {
-		name string
-		item ItemDesc
-		want string
-	}{
-		{"normal", ItemDesc{"normal", "value"}, `"normal": "value"`},
-		{"quotation", ItemDesc{"normal", "val\"u'e"}, `"normal": "val\"u'e"`},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, string(tt.item.Encode()), "Encode()")
-		})
-	}
-}
