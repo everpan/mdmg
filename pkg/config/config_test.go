@@ -9,11 +9,11 @@ import (
 
 func TestOutputSchema(t *testing.T) {
 	c := &IcSectionConfig{}
-	schema := c.OutputSchema()
+	schema := c.ExportSchema(false)
 	c2 := &IcSectionConfig{}
 	e := c2.ParseSchema(schema)
 	assert.Nil(t, e)
-	schema2 := c2.OutputSchema()
+	schema2 := c2.ExportSchema(false)
 	assert.Equal(t, schema, schema2)
 }
 
@@ -21,7 +21,7 @@ func TestParseSchema(t *testing.T) {
 	secConf := GlobalConfig.NewSection("test", "test")
 	secConf.AddEnumSchema("enable", "是否启用", values.VBooleanT, "true",
 		EnumDesc{"true": "启用", "false": "停用"})
-	defConfig := string(secConf.OutputSchema())
+	defConfig := string(secConf.ExportSchema(false))
 	t.Log(defConfig)
 	enableVal := secConf.GetValue("enable")
 	assert.Equal(t, true, enableVal)
@@ -45,7 +45,7 @@ func TestParseSchema(t *testing.T) {
 			} else {
 				assert.Contains(t, e.Error(), tt.wantErrString)
 			}
-			assert.Equal(t, tt.wantJsonConfig, string(c.OutputSchema()))
+			assert.Equal(t, tt.wantJsonConfig, string(c.ExportSchema(false)))
 			// t.Log(string(conf.OutputValues()))
 		})
 	}
@@ -72,9 +72,9 @@ func TestConfigSchema(t *testing.T) {
 	assert.Equal(t, true, sc.Default)
 	// assert.False(t, sc.IsSetVal)
 
-	schemaJson := conf.OutputValues()
+	schemaJson := conf.OutputValues(false)
 	t.Log(string(schemaJson))
-	schemaJson2 := conf.OutputFlatValues()
+	schemaJson2 := conf.OutputValues(true)
 	assert.Contains(t, string(schemaJson2), "system.using-feature")
 
 	assert.Equal(t, true, conf.GetValue("system.using-feature"), "")
