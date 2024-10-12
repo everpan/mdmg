@@ -19,7 +19,7 @@ var (
 		Path:    "/v1/icode/:modVer/:jsFile/*",
 		Handler: icodeHandler,
 	}
-	gConfig = config.ICodeGlobalConfig
+	gConfig = config.GlobalConfig
 )
 
 func init() {

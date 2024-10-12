@@ -24,3 +24,7 @@ func (vb *VBool) SchemaType() VType {
 func (vb *VBool) Value() any {
 	return vb.value
 }
+
+func (vb *VBool) SetValue(val any) {
+	vb.value = val.(bool)
+}

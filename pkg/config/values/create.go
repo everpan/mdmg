@@ -2,6 +2,7 @@ package values
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -26,6 +27,15 @@ type IValue interface {
 	Value() any
 	ValueFromString(string) error
 	SchemaType() VType
+	// SetValue(val any)
+}
+
+// SameType 判断IValue 与 any 的类型是否一致
+func SameType(v IValue, u any) bool {
+	if v != nil {
+		return reflect.TypeOf(v.Value()) == reflect.TypeOf(u)
+	}
+	return false
 }
 
 // CreateValue value factory
