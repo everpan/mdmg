@@ -47,7 +47,8 @@ func TestCreateValue(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			val, err := CreateValue(VType(tt.typ), tt.strVal)
+			vt := VType(tt.typ)
+			val, err := CreateValue(vt, tt.strVal)
 			if err != nil {
 				assert.Nil(t, val)
 				assert.NotEmptyf(t, tt.errStr, "return error: %v", err) // 错误信息必须给定
@@ -55,12 +56,12 @@ func TestCreateValue(t *testing.T) {
 				return
 			}
 			assert.NotNil(t, val)
-			if tt.typ == "bool" {
-				tt.typ = "boolean"
+			if vt == VBoolT {
+				vt = VBooleanT
 			}
-			assert.Equalf(t, tt.typ, string(val.SchemaType()), "type %v, %v", tt.typ, val.SchemaType())
+			assert.Equalf(t, vt, val.SchemaType(), "type %v, %v", vt, val.SchemaType())
 			// t.Log(tt.wantVal, val.String())
-			assert.Equalf(t, tt.wantVal, val.String(), "CreateValue(%v, %v)", tt.typ, tt.wantVal)
+			assert.Equalf(t, tt.wantVal, val.String(), "CreateValue(%v, %v)", vt, tt.wantVal)
 		})
 	}
 }
