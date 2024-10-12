@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/everpan/mdmg/pkg/config"
+	"github.com/everpan/mdmg/pkg/config/values"
 	"github.com/everpan/mdmg/pkg/ctx"
 	"github.com/everpan/mdmg/utils"
 	"github.com/gofiber/fiber/v2"
@@ -12,6 +13,14 @@ import (
 	"path/filepath"
 	v8 "rogchap.com/v8go"
 	"strings"
+	"sync"
+)
+
+const (
+	// config key
+	moduleName    = "js-module"
+	rootPath      = "root-path"
+	versionInPath = "version-in-path"
 )
 
 var (
@@ -19,16 +28,16 @@ var (
 		Path:    "/v1/icode/:modVer/:jsFile/*",
 		Handler: icodeHandler,
 	}
-	gConfig = config.GlobalConfig
+	myConfig           = config.GlobalConfig.NewSection(moduleName, "JS模块")
+	rootPathValue      = "./js-api"
+	versionInPathValue = false
 )
 
 func init() {
 	// 本模块下需要的一些配置
-	sectionConfig := gConfig.AddSection("js-module", "JS模块")
-	sectionConfig.AddStringSchema("js-module.root-path", "根目录", "./js-api")
-	sectionConfig.AddEnumSchema("js-module.version-in-path", "", "show", config.EnumDesc{
-		"show": "显式展示版本", "hidden": "隐藏版本",
-	})
+	myConfig.AddStringSchema(rootPath, "根目录", rootPathValue)
+	myConfig.AddEnumSchema(versionInPath, "", values.VBoolT, "true",
+		config.EnumDesc{"true": "显式展示版本", "false": "隐藏版本"})
 }
 
 func icodeHandler(c *ctx.IcContext) error {
@@ -39,11 +48,11 @@ func icodeHandler(c *ctx.IcContext) error {
 	subFile := fc.Params("*1")
 	var shortFileName string
 	if len(subFile) == 0 {
-		shortFileName = filepath.Join(movVer, config.DefaultConfig.JSModuleBeckEndDir, fName+".js")
+		shortFileName = filepath.Join(movVer, fName+".js")
 	} else {
 		subs := strings.Split(subFile, "/")
 		substr := filepath.Join(subs...)
-		shortFileName = filepath.Join(movVer, config.DefaultConfig.JSModuleBeckEndDir, fName, substr+".js")
+		shortFileName = filepath.Join(movVer, fName, substr+".js")
 	}
 	var err error
 	var r1, r2, output *v8.Value
@@ -89,7 +98,10 @@ func icodeHandler(c *ctx.IcContext) error {
 }
 
 func runScriptByFileShortName(ctx *ctx.IcContext, shortFileName string) (*v8.Value, error) {
-	scriptFile := filepath.Join(config.DefaultConfig.JSModuleRootPath, shortFileName)
+	sync.OnceFunc(func() {
+		rootPathValue = myConfig.GetValue(rootPath).(string)
+	})
+	scriptFile := filepath.Join(rootPathValue, shortFileName)
 	scriptContext, err := os.ReadFile(scriptFile)
 	if err != nil {
 		return nil, err

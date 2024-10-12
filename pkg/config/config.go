@@ -8,13 +8,6 @@ import (
 	"strings"
 )
 
-type Config struct {
-	JSModuleRootPath string
-	// module-version/${JSModuleBeckEndDir}/script.js
-	JSModuleBeckEndDir string
-	HiddenModelVersion bool `yaml:"hidden-model-version"`
-}
-
 type ItemDesc struct {
 	Item string `json:"-"` // the key
 	Desc string `json:"desc"`
@@ -105,11 +98,11 @@ func init() {
 	GlobalConfig.NewSection("system", "系统")
 }
 
-func (c *IcConfig) NewSection(sec, desc string) *IcSectionConfig {
-	seConf, ok := c.confMap[sec]
+func (c *IcConfig) NewSection(section, desc string) *IcSectionConfig {
+	seConf, ok := c.confMap[section]
 	if !ok {
 		seConf = &IcSectionConfig{description: desc, sMap: make(map[string]*Schema)}
-		c.confMap[sec] = seConf
+		c.confMap[section] = seConf
 	}
 	return seConf
 }
@@ -192,9 +185,10 @@ func (c *IcSectionConfig) GetSchema(key string) *Schema {
 }
 
 func (c *IcSectionConfig) GetValue(key string) any {
-	scheam, ok := c.sMap[key]
+	schema, ok := c.sMap[key]
 	if ok {
-		return scheam.GetValue()
+		v := schema.GetValue()
+		return v
 	}
 	return nil
 }
@@ -288,9 +282,4 @@ func (c *IcSectionConfig) SetValue(key string, val any) error {
 		return fmt.Errorf("no schema for key: %s", key)
 	}
 	return sc.SetValue(val)
-}
-
-var DefaultConfig = Config{
-	JSModuleRootPath:   "web/script_module",
-	JSModuleBeckEndDir: "backend",
 }
