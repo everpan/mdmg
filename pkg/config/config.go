@@ -40,8 +40,9 @@ type Schema struct {
 	Type     values.VType  `json:"type"`                // category string number enum
 	EnumDesc EnumDesc      `json:"enum-desc,omitempty"` // if type is enum , give each desc of enum value, item is the enum value.
 	Value    values.IValue `json:"value,omitempty"`
-	Default  values.IValue `json:"default,omitempty"`
-	IsSetVal bool          `json:"-"`
+	// Default  values.IValue `json:"default,omitempty"`
+	Default  any  `json:"default,omitempty"`
+	IsSetVal bool `json:"-"`
 }
 
 type SchemaMap = map[string]*Schema
@@ -58,7 +59,7 @@ var (
 func (sc *Schema) GetValue() any {
 	if sc.Value == nil {
 		if sc.Default != nil {
-			return sc.Default.Value()
+			return sc.Default
 		}
 	} else {
 		return sc.Value.Value()
@@ -90,14 +91,17 @@ func NewItemSchema(section, item, desc string, typ values.VType, val, defVal str
 	var (
 		// err error
 		sVal, dVal values.IValue
+		dv         any
 	)
 	if val != "" {
 		sVal, _ = values.CreateValue(typ, val)
 	}
 	dVal, _ = values.CreateValue(typ, defVal)
-
+	if dVal != nil {
+		dv = dVal.Value()
+	}
 	return &Schema{
-		item, desc, typ, nil, sVal, dVal, val != "",
+		item, desc, typ, nil, sVal, dv, val != "",
 	}
 }
 

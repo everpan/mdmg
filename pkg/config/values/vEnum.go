@@ -20,3 +20,10 @@ func (ve *VEnum) SchemaType() VType {
 func (ve *VEnum) Value() any {
 	return ve.value.Value()
 }
+
+//func (ve *VEnum) MarshalJSON() ([]byte, error) {
+//	return []byte(`{"everpan":true}`), nil
+//}
+//func (ve *VEnum) UnmarshalJSON(data []byte) error {
+//	return nil
+//}

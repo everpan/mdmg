@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"github.com/everpan/mdmg/pkg/config/values"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -23,7 +24,7 @@ func TestParseSchema(t *testing.T) {
 	defConfig := string(ICodeGlobalConfig.OutputSchema())
 	t.Log(defConfig)
 	enableVal, _ := ICodeGlobalConfig.GetValue("enable")
-	assert.Equal(t, "true", enableVal)
+	assert.Equal(t, true, enableVal)
 	tests := []struct {
 		name           string
 		jsonConfig     string
@@ -46,4 +47,14 @@ func TestParseSchema(t *testing.T) {
 			assert.Equal(t, tt.wantJsonConfig, string(c.OutputSchema()))
 		})
 	}
+}
+
+func TestEnumSchema(t *testing.T) {
+	testEnum := NewItemSchema("", "test", "just for test", values.CompositeT(values.VEnumT, values.VBoolT), "", "true")
+	jd, _ := json.Marshal(testEnum)
+	t.Log(string(jd), testEnum.Default)
+	assert.Nil(t, testEnum.Value)
+	assert.NotNil(t, testEnum.Default)
+	jd, _ = json.Marshal(testEnum.Default)
+	t.Log("enum value is true ", string(jd), testEnum.Default)
 }
