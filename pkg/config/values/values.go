@@ -59,7 +59,9 @@ func createCompositeValue(typ VType, strVal string) (IValue, error) {
 		err error
 	)
 	split := strings.Split(string(typ), "|")
-	// check size ?
+	if len(split) != 2 {
+		return nil, fmt.Errorf("invalid value type: %s", typ)
+	}
 	typ1, typ2 := VType(split[0]), VType(split[1])
 	if typ1 == VEnumT {
 		v, err := CreateValue(typ2, strVal)
