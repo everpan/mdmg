@@ -29,8 +29,7 @@ type Schema struct {
 	EnumDesc EnumDesc      `json:"enum-desc,omitempty"` // if type is enum , give each desc of enum value, item is the enum value.
 	Value    values.IValue `json:"-"`
 	// Default  values.IValue `json:"default,omitempty"`
-	Default  any  `json:"default,omitempty"`
-	IsSetVal bool `json:"-"`
+	Default any `json:"default,omitempty"`
 }
 
 type IcSectionConfig struct {
@@ -50,7 +49,7 @@ func (sc *Schema) GetValue() any {
 	//} else {
 	//	return sc.Value.Value()
 	//}
-	if sc.IsSetVal {
+	if sc.Value != nil {
 		return sc.Value.Value()
 	}
 	return sc.Default
@@ -77,7 +76,6 @@ func (sc *Schema) SetValue(val any) error {
 
 func (sc *Schema) ClearValue() {
 	sc.Value = nil
-	sc.IsSetVal = false
 }
 
 func NewIConfig() *IcConfig {
@@ -100,7 +98,7 @@ func NewItemSchema(item, desc string, typ values.VType, val, defVal string) *Sch
 		dv = dVal.Value()
 	}
 	return &Schema{strings.TrimSpace(item),
-		desc, typ, nil, sVal, dv, val != ""}
+		desc, typ, nil, sVal, dv}
 }
 
 func init() {
@@ -289,7 +287,6 @@ func (c *IcSectionConfig) SetValue(key string, val any) error {
 	if sc == nil {
 		return fmt.Errorf("no schema for key: %s", key)
 	}
-	sc.IsSetVal = true
 	return sc.SetValue(val)
 }
 
