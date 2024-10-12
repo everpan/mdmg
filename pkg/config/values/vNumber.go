@@ -1,7 +1,6 @@
 package values
 
 import (
-	"bytes"
 	"strconv"
 	"strings"
 )
@@ -24,17 +23,6 @@ func (vn *VNumber) SchemaType() VType {
 	return VNumberT
 }
 
-func (vn *VNumber) Encode(buf bytes.Buffer) error {
-	buf.WriteString(strconv.FormatInt(vn.value, 10))
-	buf.WriteString(",\n")
-	return nil
-}
-
-func (vn *VNumber) Decode(buf bytes.Buffer) error {
-	line, err := buf.ReadString('\n')
-	if err != nil {
-		return err
-	}
-	vn.ValueFromString(line)
-	return nil
+func (vn *VNumber) Value() any {
+	return vn.value
 }

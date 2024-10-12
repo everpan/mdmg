@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/everpan/mdmg/pkg/config/values"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -17,7 +18,7 @@ func TestOutputSchema(t *testing.T) {
 }
 
 func TestParseSchema(t *testing.T) {
-	ICodeGlobalConfig.AddEnumSchema("enable", "是否启用", "true",
+	ICodeGlobalConfig.AddEnumSchema("enable", "是否启用", values.VBooleanT, "true",
 		EnumDesc{"true": "启用", "false": "停用"})
 	defConfig := string(ICodeGlobalConfig.OutputSchema())
 	t.Log(defConfig)

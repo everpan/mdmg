@@ -39,13 +39,7 @@ func (av *VArray) SchemaType() VType {
 	}
 	return "array" + "|" + av.value[0].SchemaType()
 }
-func (av *VArray) Encode(buf bytes.Buffer) error {
-	return nil
-}
-func (av *VArray) Decode(buf bytes.Buffer) error {
-	return nil
-}
 
-func (av *VArray) SetType(typ VType) {
-	av.typ = typ
+func (av *VArray) Value() any {
+	return av.value
 }

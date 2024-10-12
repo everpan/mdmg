@@ -3,8 +3,7 @@ package config
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
-	"strconv"
+	"github.com/everpan/mdmg/pkg/config/values"
 )
 
 type Config struct {
@@ -22,26 +21,27 @@ type ItemDesc struct {
 type EnumDesc map[string]string
 
 /*
-func (itemDesc *ItemDesc) Encode() []byte {
-	buf := new(bytes.Buffer)
-	encoder := json.NewEncoder(buf)
-	encoder.Encode(itemDesc.Item)
-	buf.Truncate(buf.Len() - 1)
-	buf.WriteString(": ")
-	encoder.Encode(itemDesc.Desc)
-	buf.Truncate(buf.Len() - 1)
-	return buf.Bytes()
-}
+	func (itemDesc *ItemDesc) Encode() []byte {
+		buf := new(bytes.Buffer)
+		encoder := json.NewEncoder(buf)
+		encoder.Encode(itemDesc.Item)
+		buf.Truncate(buf.Len() - 1)
+		buf.WriteString(": ")
+		encoder.Encode(itemDesc.Desc)
+		buf.Truncate(buf.Len() - 1)
+		return buf.Bytes()
+	}
 */
+const VSectionT values.VType = "section"
 
 type Schema struct {
-	Item     string   `json:"-"` // the key
-	Desc     string   `json:"desc"`
-	Type     string   `json:"type"`                // category string number enum
-	EnumDesc EnumDesc `json:"enum-desc,omitempty"` // if type is enum , give each desc of enum value, item is the enum value.
-	Value    string   `json:"value,omitempty"`
-	Default  string   `json:"default,omitempty"`
-	IsSetVal bool     `json:"-"`
+	Item     string        `json:"-"` // the key
+	Desc     string        `json:"desc"`
+	Type     values.VType  `json:"type"`                // category string number enum
+	EnumDesc EnumDesc      `json:"enum-desc,omitempty"` // if type is enum , give each desc of enum value, item is the enum value.
+	Value    values.IValue `json:"value,omitempty"`
+	Default  values.IValue `json:"default,omitempty"`
+	IsSetVal bool          `json:"-"`
 }
 
 type SchemaMap = map[string]*Schema
@@ -55,22 +55,15 @@ var (
 	ICodeGlobalConfig = NewIConfig()
 )
 
-type ValueType = string
-
-const (
-	CategoryType ValueType = "category"
-	StringType   ValueType = "string"
-	NumberType   ValueType = "number"
-	FloatType    ValueType = "float"
-	BooleanType  ValueType = "boolean"
-	EnumType     ValueType = "enum"
-)
-
-func (sc *Schema) GetValue() string {
-	if len(sc.Value) == 0 {
-		return sc.Default
+func (sc *Schema) GetValue() any {
+	if sc.Value == nil {
+		if sc.Default != nil {
+			return sc.Default.Value()
+		}
+	} else {
+		return sc.Value.Value()
 	}
-	return sc.Value
+	return nil
 }
 
 func (sc *Schema) Update(schema *Schema, forceUpdateValue bool) {
@@ -88,14 +81,23 @@ func NewIConfig() *IcConfig {
 		sMap: SchemaMap{},
 	}
 }
-func NewItemSchema(section, item, desc string, typ ValueType, val, def string) *Schema {
-	if typ == CategoryType {
+func NewItemSchema(section, item, desc string, typ values.VType, val, defVal string) *Schema {
+	if typ == VSectionT {
 		item = section
 	} else if len(section) > 0 {
 		item = section + "." + item
 	}
+	var (
+		// err error
+		sVal, dVal values.IValue
+	)
+	if val != "" {
+		sVal, _ = values.CreateValue(typ, val)
+	}
+	dVal, _ = values.CreateValue(typ, defVal)
+
 	return &Schema{
-		item, desc, typ, nil, val, def,
+		item, desc, typ, nil, sVal, dVal, val != "",
 	}
 }
 
@@ -147,70 +149,13 @@ func (c *IcConfig) LoadKeyValue(data []byte) error {
 	return nil
 }
 
-func (c *IcConfig) Validate(data []byte) []error {
-	kv := make(map[string]any)
-	if err := json.Unmarshal(data, &kv); err != nil {
-		return []error{err}
-	}
-	errs := make([]error, 0)
-	for k, v := range kv {
-		sc := c.GetSchema(k)
-		if sc == nil {
-			errs = append(errs, fmt.Errorf("not found schema of `%v`", k))
-		}
-		// check v and sc.Type is same
-		switch v.(type) {
-		case string:
-			if sc.Type != StringType {
-				errs = append(errs, fmt.Errorf("not support type of `%v`, need string", k))
-			}
-		case int64, int32:
-			if sc.Type != NumberType {
-				errs = append(errs, fmt.Errorf("not support type of `%v`, need number", k))
-			}
-		case float64, float32:
-			if sc.Type != FloatType {
-				errs = append(errs, fmt.Errorf("not support type of `%v`, need float", k))
-			}
-		case bool:
-			if sc.Type != BooleanType {
-				errs = append(errs, fmt.Errorf("not support type of `%v`, need boolean", k))
-			}
-		}
-	}
-	if len(errs) > 0 {
-		return errs
-	}
-	return nil
-}
-
-func FetchValueByType(val, typ string) any {
-	if typ == CategoryType {
-		return nil
-	}
-	switch typ {
-	case NumberType:
-		v, _ := strconv.ParseInt(val, 10, 64)
-		return v
-	case FloatType:
-		v, _ := strconv.ParseFloat(val, 64)
-		return v
-	default:
-		return val
-	}
-}
-
 func (c *IcConfig) OutputMap() map[string]any {
 	kv := make(map[string]any)
 	for _, item := range c.sMap {
-		if item.Type == CategoryType {
+		if item.Type == VSectionT {
 			continue
 		}
-		strVal := item.Value
-		if len(item.Value) == 0 {
-			strVal = item.Default
-		}
-		kv[item.Item] = FetchValueByType(strVal, item.Type)
+		kv[item.Item] = item.GetValue()
 	}
 	return kv
 }
@@ -242,27 +187,27 @@ func (c *IcConfig) ReplaceSchemaAndValue(schema *Schema) {
 	sc.Update(schema, true)
 }
 func (c *IcConfig) AddSection(sec, desc string) *IcConfig {
-	c.ReplaceSchema(NewItemSchema(sec, "", desc, CategoryType, "", ""))
+	c.ReplaceSchema(NewItemSchema(sec, "", desc, VSectionT, "", ""))
 	return &IcConfig{
 		section: sec,
 		sMap:    c.sMap,
 	}
 }
 func (c *IcConfig) AddStringSchema(item, desc, defaultValue string) {
-	c.ReplaceSchema(NewItemSchema(c.section, item, desc, StringType, "", defaultValue))
+	c.ReplaceSchema(NewItemSchema(c.section, item, desc, values.VStringT, "", defaultValue))
 }
 func (c *IcConfig) AddNumberSchema(item, desc, defaultValue string) {
-	c.ReplaceSchema(NewItemSchema(c.section, item, desc, NumberType, "0", defaultValue))
+	c.ReplaceSchema(NewItemSchema(c.section, item, desc, values.VNumberT, "", defaultValue))
 }
 func (c *IcConfig) AddFloatSchema(item, desc, defaultValue string) {
-	c.ReplaceSchema(NewItemSchema(c.section, item, desc, FloatType, "0.0", defaultValue))
+	c.ReplaceSchema(NewItemSchema(c.section, item, desc, values.VFloatT, "", defaultValue))
 }
 func (c *IcConfig) AddBooleanSchema(item, desc, defaultValue string) {
-	c.ReplaceSchema(NewItemSchema(c.section, item, desc, BooleanType, "false", defaultValue))
+	c.ReplaceSchema(NewItemSchema(c.section, item, desc, values.VBooleanT, "false", defaultValue))
 }
 
-func (c *IcConfig) AddEnumSchema(item, desc, defaultValue string, enumDesc EnumDesc) {
-	schema := NewItemSchema(c.section, item, desc, EnumType, "", defaultValue)
+func (c *IcConfig) AddEnumSchema(item, desc string, valType values.VType, defaultValue string, enumDesc EnumDesc) {
+	schema := NewItemSchema(c.section, item, desc, values.CompositeT(values.VEnumT, valType), "", defaultValue)
 	schema.EnumDesc = enumDesc
 	c.ReplaceSchema(schema)
 }

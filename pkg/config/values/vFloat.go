@@ -1,7 +1,6 @@
 package values
 
 import (
-	"bytes"
 	"strconv"
 )
 
@@ -22,9 +21,6 @@ func (vf *VFloat) SchemaType() VType {
 	return VFloatT
 }
 
-func (vf *VFloat) Encode(buf bytes.Buffer) error {
-	return nil
-}
-func (vf *VFloat) Decode(buf bytes.Buffer) error {
-	return nil
+func (vf *VFloat) Value() any {
+	return vf.value
 }

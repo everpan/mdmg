@@ -1,7 +1,6 @@
 package values
 
 import (
-	"bytes"
 	"strconv"
 )
 
@@ -22,10 +21,6 @@ func (vb *VBool) SchemaType() VType {
 	return VBooleanT
 }
 
-func (vb *VBool) Encode(buf bytes.Buffer) error {
-	return nil
-}
-
-func (vb *VBool) Decode(buf bytes.Buffer) error {
-	return nil
+func (vb *VBool) Value() any {
+	return vb.value
 }

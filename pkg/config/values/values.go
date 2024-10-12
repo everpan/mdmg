@@ -1,7 +1,6 @@
 package values
 
 import (
-	"bytes"
 	"fmt"
 	"strings"
 )
@@ -18,12 +17,15 @@ const (
 	VStringT  VType = "string"
 )
 
+func CompositeT(typ VType, subTyp VType) VType {
+	return typ + "|" + subTyp
+}
+
 type IValue interface {
 	String() string
+	Value() any
 	ValueFromString(string) error
 	SchemaType() VType
-	Encode(buf bytes.Buffer) error
-	Decode(buf bytes.Buffer) error
 }
 
 // CreateValue value factory

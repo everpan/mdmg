@@ -1,9 +1,18 @@
 package values
 
 import (
+	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
+
+func TestIValueJson(t *testing.T) {
+	var v IValue
+	assert.Nil(t, v)
+	d, e := json.Marshal(v)
+	assert.Nil(t, e)
+	assert.Equal(t, string(d), `null`)
+}
 
 func TestCreateValue(t *testing.T) {
 	tests := []struct {
