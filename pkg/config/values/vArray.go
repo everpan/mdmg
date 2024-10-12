@@ -6,7 +6,7 @@ import (
 )
 
 type VArray struct {
-	typ   string
+	typ   VType
 	value []IValue
 }
 
@@ -33,7 +33,7 @@ func (av *VArray) ValueFromString(s string) (err error) {
 	}
 	return nil
 }
-func (av *VArray) SchemaType() string {
+func (av *VArray) SchemaType() VType {
 	if len(av.value) == 0 {
 		return "array|null"
 	}
@@ -46,6 +46,6 @@ func (av *VArray) Decode(buf bytes.Buffer) error {
 	return nil
 }
 
-func (av *VArray) SetType(typ string) {
+func (av *VArray) SetType(typ VType) {
 	av.typ = typ
 }

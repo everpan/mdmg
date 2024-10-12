@@ -15,7 +15,7 @@ func (ve *VEnum) ValueFromString(s string) (err error) {
 	return ve.ValueFromString(s)
 }
 
-func (ve *VEnum) SchemaType() string {
+func (ve *VEnum) SchemaType() VType {
 	return "enum" + "|" + ve.value.SchemaType()
 }
 

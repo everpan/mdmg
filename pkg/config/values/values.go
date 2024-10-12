@@ -6,30 +6,42 @@ import (
 	"strings"
 )
 
+type VType string
+
+const (
+	VArrayT   VType = "array"
+	VBooleanT VType = "boolean"
+	VBoolT    VType = "bool"
+	VEnumT    VType = "enum"
+	VFloatT   VType = "float"
+	VNumberT  VType = "number"
+	VStringT  VType = "string"
+)
+
 type IValue interface {
 	String() string
 	ValueFromString(string) error
-	SchemaType() string
+	SchemaType() VType
 	Encode(buf bytes.Buffer) error
 	Decode(buf bytes.Buffer) error
 }
 
 // CreateValue value factory
-func CreateValue(typ string, strVal string) (IValue, error) {
+func CreateValue(typ VType, strVal string) (IValue, error) {
 	var val IValue
-	if strings.Index(typ, "|") > -1 {
+	if strings.Index(string(typ), "|") > -1 {
 		return createCompositeValue(typ, strVal)
 	}
 	switch typ {
-	case "boolean", "bool":
+	case VBoolT, VBooleanT:
 		val = &VBool{}
-	case "float":
+	case VFloatT:
 		val = &VFloat{}
-	case "string":
+	case VStringT:
 		val = &VString{}
-	case "number":
+	case VNumberT:
 		val = &VNumber{}
-	case "array", "enum":
+	case VArrayT, VEnumT:
 		return nil, fmt.Errorf("composite type %s, using sample: %s|number", typ, typ)
 	default:
 		return nil, fmt.Errorf("invalid value type: %s", typ)
@@ -41,15 +53,15 @@ func CreateValue(typ string, strVal string) (IValue, error) {
 	return val, err
 }
 
-func createCompositeValue(typ string, strVal string) (IValue, error) {
+func createCompositeValue(typ VType, strVal string) (IValue, error) {
 	var (
 		val IValue
 		err error
 	)
-	split := strings.Split(typ, "|")
+	split := strings.Split(string(typ), "|")
 	// check size ?
-	typ1, typ2 := split[0], split[1]
-	if typ1 == "enum" {
+	typ1, typ2 := VType(split[0]), VType(split[1])
+	if typ1 == VEnumT {
 		v, err := CreateValue(typ2, strVal)
 		if err != nil {
 			return nil, err
@@ -57,7 +69,7 @@ func createCompositeValue(typ string, strVal string) (IValue, error) {
 		val = &VEnum{
 			value: v,
 		}
-	} else if typ1 == "array" {
+	} else if typ1 == VArrayT {
 		val = &VArray{
 			typ:   typ2,
 			value: make([]IValue, 0),

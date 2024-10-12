@@ -18,8 +18,8 @@ func (vb *VBool) ValueFromString(s string) (err error) {
 	return
 }
 
-func (vb *VBool) SchemaType() string {
-	return "boolean"
+func (vb *VBool) SchemaType() VType {
+	return VBooleanT
 }
 
 func (vb *VBool) Encode(buf bytes.Buffer) error {

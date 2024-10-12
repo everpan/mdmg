@@ -18,8 +18,8 @@ func (vs *VString) ValueFromString(s string) error {
 	return nil
 }
 
-func (vs *VString) SchemaType() string {
-	return "string"
+func (vs *VString) SchemaType() VType {
+	return VStringT
 }
 
 func (vs *VString) Encode(buf bytes.Buffer) error {

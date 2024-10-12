@@ -41,6 +41,7 @@ type Schema struct {
 	EnumDesc EnumDesc `json:"enum-desc,omitempty"` // if type is enum , give each desc of enum value, item is the enum value.
 	Value    string   `json:"value,omitempty"`
 	Default  string   `json:"default,omitempty"`
+	IsSetVal bool     `json:"-"`
 }
 
 type SchemaMap = map[string]*Schema

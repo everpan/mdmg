@@ -20,8 +20,8 @@ func (vn *VNumber) ValueFromString(s string) (err error) {
 	return
 }
 
-func (vn *VNumber) SchemaType() string {
-	return "number"
+func (vn *VNumber) SchemaType() VType {
+	return VNumberT
 }
 
 func (vn *VNumber) Encode(buf bytes.Buffer) error {

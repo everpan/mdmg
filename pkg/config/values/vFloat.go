@@ -18,8 +18,8 @@ func (vf *VFloat) ValueFromString(s string) (err error) {
 	return
 }
 
-func (vf *VFloat) SchemaType() string {
-	return "float"
+func (vf *VFloat) SchemaType() VType {
+	return VFloatT
 }
 
 func (vf *VFloat) Encode(buf bytes.Buffer) error {
