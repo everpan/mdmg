@@ -36,8 +36,7 @@ var (
 func init() {
 	// 本模块下需要的一些配置
 	myConfig.AddStringSchema(rootPath, "根目录", rootPathValue)
-	myConfig.AddEnumSchema(versionInPath, "", values.VBoolT, "true",
-		config.EnumDesc{"true": "显式展示版本", "false": "隐藏版本"})
+	myConfig.AddEnumSchema(values.VBoolT, versionInPath, "", "true", config.EnumDesc{"true": "显式展示版本", "false": "隐藏版本"})
 }
 
 func icodeHandler(c *ctx.IcContext) error {

@@ -1,10 +1,10 @@
 package config
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/everpan/mdmg/pkg/config/values"
+	. "github.com/everpan/mdmg/pkg/config/values"
+	"strings"
 )
 
 type IcSectionConfig struct {
@@ -33,36 +33,35 @@ func (c *IcSectionConfig) GetValue(key string) any {
 }
 
 // ExportSchema 输出schema信息
-func (c *IcSectionConfig) ExportSchema(flat bool) []byte {
-	if len(c.sMap) == 0 {
-		return []byte("{}")
+func (c *IcSectionConfig) ExportSchema() []byte {
+	var m = make(map[string]any)
+	for k, v := range c.sMap {
+		m[k] = v
 	}
-	buf := bytes.NewBufferString("{\n")
-	for k, schema := range c.sMap {
-		buf.WriteString(" \"")
-		buf.WriteString(k)
-		buf.WriteString("\": ")
-		data, _ := json.Marshal(schema)
-		buf.Write(data)
-		buf.WriteString(",\n")
-	}
-	if len(c.sMap) > 0 {
-		buf.Truncate(buf.Len() - 2)
-	}
-	buf.WriteString("\n}")
-	return buf.Bytes()
+	m["__desc"] = c.description
+	jd, _ := json.MarshalIndent(m, "", " ")
+	return jd
 }
 
-// ParseSchema 解析schema，形成默认配置
-func (c *IcSectionConfig) ParseSchema(data []byte) error {
-	return json.Unmarshal(data, &c.sMap)
+// ImportSchema 解析schema，形成默认配置
+func (c *IcSectionConfig) ImportSchema(data []byte) error {
+	var m = make(map[string]json.RawMessage)
+	json.Unmarshal(data, &m)
+	json.Unmarshal(m["__desc"], &c.description)
+	delete(m, "__desc")
+	for k, v := range m {
+		var schema = Schema{}
+		json.Unmarshal(v, &schema)
+		c.sMap[k] = &schema
+	}
+	return nil
 }
 
 func (c *IcSectionConfig) LoadKeyValue(data []byte) error {
 	return nil
 }
 
-func (c *IcSectionConfig) OutputMap() map[string]any {
+func (c *IcSectionConfig) ExportKeyValueMap() map[string]any {
 	kv := make(map[string]any)
 	for _, item := range c.sMap {
 		kv[item.Item] = item.GetValue()
@@ -70,9 +69,9 @@ func (c *IcSectionConfig) OutputMap() map[string]any {
 	return kv
 }
 
-// OutputKeyValue 以kv的形式输出配置项; description is ignore
-func (c *IcSectionConfig) OutputKeyValue() []byte {
-	kv := c.OutputMap()
+// ExportKeyValue 以kv的形式输出配置项; description is ignore
+func (c *IcSectionConfig) ExportKeyValue() []byte {
+	kv := c.ExportKeyValueMap()
 	data, _ := json.MarshalIndent(kv, "", " ")
 	return data
 }
@@ -97,22 +96,32 @@ func (c *IcSectionConfig) ReplaceSchemaAndValue(schema *Schema) {
 	sc.Update(schema, true)
 }
 func (c *IcSectionConfig) AddStringSchema(item, desc, defaultValue string) {
-	c.ReplaceSchema(NewItemSchema(item, desc, values.VStringT, "", defaultValue))
+	c.ReplaceSchema(NewItemSchema(VStringT, item, desc, "", defaultValue))
 }
 func (c *IcSectionConfig) AddNumberSchema(item, desc, defaultValue string) {
-	c.ReplaceSchema(NewItemSchema(item, desc, values.VNumberT, "", defaultValue))
+	c.ReplaceSchema(NewItemSchema(VNumberT, item, desc, "", defaultValue))
 }
 func (c *IcSectionConfig) AddFloatSchema(item, desc, defaultValue string) {
-	c.ReplaceSchema(NewItemSchema(item, desc, values.VFloatT, "", defaultValue))
+	c.ReplaceSchema(NewItemSchema(VFloatT, item, desc, "", defaultValue))
 }
 func (c *IcSectionConfig) AddBooleanSchema(item, desc, defaultValue string) {
-	c.ReplaceSchema(NewItemSchema(item, desc, values.VBooleanT, "", defaultValue))
+	c.ReplaceSchema(NewItemSchema(VBooleanT, item, desc, "", defaultValue))
 }
 
-func (c *IcSectionConfig) AddEnumSchema(item, desc string, valType values.VType, defaultValue string, enumDesc EnumDesc) {
-	schema := NewItemSchema(item, desc, values.CompositeT(values.VEnumT, valType), "", defaultValue)
+func (c *IcSectionConfig) AddEnumSchema(valType VType, item, desc, defaultValue string, enumDesc EnumDesc) error {
+	_, ok := enumDesc[defaultValue]
+	if !ok {
+		var allValue []string
+		for ed := range enumDesc {
+			allValue = append(allValue, ed)
+		}
+		return fmt.Errorf("default value `%s` must be one of [%v]",
+			defaultValue, strings.Join(allValue, ","))
+	}
+	schema := NewItemSchema(CompositeT(VEnumT, valType), item, desc, "", defaultValue)
 	schema.EnumDesc = enumDesc
 	c.ReplaceSchema(schema)
+	return nil
 }
 
 func (c *IcSectionConfig) SetValue(key string, val any) error {
