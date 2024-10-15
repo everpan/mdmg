@@ -204,12 +204,13 @@ func (c *IcConfig) ExportSchema() []byte {
 }
 
 func (c *IcConfig) ImportSchema(data []byte) error {
+	// todo parse by format, default is json
 	var m = make(map[string]json.RawMessage)
 	err := json.Unmarshal(data, &m)
 	if err != nil {
 		return err
 	}
-	// todo parse by format, default is json
+
 	for k, v := range m {
 		sf := &IcSectionConfig{}
 		err = sf.ImportSchema(v)
