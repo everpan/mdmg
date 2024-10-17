@@ -18,7 +18,8 @@ type Schema struct {
 	Desc     string   `json:"desc"`
 	Type     VType    `json:"type"`                // category string number enum
 	EnumDesc EnumDesc `json:"enum-desc,omitempty"` // if type is enum , give each desc of enum value, item is the enum value.
-	Value    IValue   `json:"-"`
+	Value    IValue   `json:"-"`                   //
+	Value2   *any     `json:"-"`
 	// Default  IValue `json:"default,omitempty"`
 	Default any `json:"default,omitempty"`
 }
@@ -107,13 +108,12 @@ func NewItemSchema(typ VType, item, desc, val, defVal string) *Schema {
 		dv = dVal.Value()
 	}
 	return &Schema{strings.TrimSpace(item),
-		desc, typ, nil, sVal, dv}
+		desc, typ, nil, sVal, nil, dv}
 }
-
-func init() {
-	GlobalConfig.NewSection("system", "系统")
+func NewItemSchema2(typ VType, item, desc string, val any, defVal any) *Schema {
+	//
+	return nil
 }
-
 func (c *IcConfig) NewSection(section, desc string) *IcSectionConfig {
 	seConf, ok := c.confMap[section]
 	if !ok {

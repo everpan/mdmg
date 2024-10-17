@@ -5,6 +5,7 @@ import (
 	"github.com/Microsoft/go-winio/pkg/guid"
 	"github.com/everpan/mdmg/pkg/base/log"
 	"github.com/everpan/mdmg/pkg/base/store"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"xorm.io/xorm"
 )
@@ -48,6 +49,7 @@ func init() {
 	namespace, _ = guid.FromString(DefaultGuidNamespace)
 	DefaultInfo.SId = DefaultGuidNamespace
 	DefaultHostInfo.SId = "22222222-2222-2222-2222-222222222222"
+	viper.Set("a", "a")
 }
 
 func NewTenantInfo(idx uint32, sid string, en string, cn string,

@@ -108,6 +108,13 @@ func (c *IcSectionConfig) AddBooleanSchema(item, desc, defaultValue string) {
 	c.ReplaceSchema(NewItemSchema(VBooleanT, item, desc, "", defaultValue))
 }
 
+func (c *IcSectionConfig) SetDefault(item, desc string, value any) {
+
+}
+func (c *IcSectionConfig) SetEnumDefault(item, desc string, value any, enumDesc EnumDesc) {
+
+}
+
 func (c *IcSectionConfig) AddEnumSchema(valType VType, item, desc, defaultValue string, enumDesc EnumDesc) error {
 	_, ok := enumDesc[defaultValue]
 	if !ok {

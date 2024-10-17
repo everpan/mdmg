@@ -10,12 +10,24 @@ import (
 	"github.com/gofiber/contrib/fiberzap/v2"
 	"github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"time"
 	"xorm.io/xorm"
 )
 
+var (
+	serverAddress = pflag.String("server.host.address", ":8080",
+		"The server address in the format of host:port")
+	staticPath = pflag.String("server.public.path", "/", "The path to access public asserts")
+	staticRoot = pflag.String("server.public.root", "./static", "The root path of web public")
+	dbDriver   = pflag.String("db.driver", "sqlite3", "The database driver name")
+	dbConnStr  = pflag.String("db.connect", "./ic_test.db", "The database connection string")
+)
+
 func init() {
+	viper.BindPFlags(pflag.CommandLine)
 	viper.SetConfigName("icode")
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("$HOME/.icode/")
@@ -29,19 +41,15 @@ func init() {
 }
 
 func viperDefault() {
-	viper.SetDefault("host.addr", "")
-	viper.SetDefault("host.port", 8080)
-	viper.SetDefault("static.public", "./")
 	viper.SetDefault("swagger.file", "./docs/swagger.json")
 	viper.SetDefault("swagger.path", "./swagger")
-	viper.SetDefault("db.driver", "sqlite3")
-	viper.SetDefault("db.connect", "./ic.db")
 }
 func CreateApp() *fiber.App {
 
-	var defaultEngin, _ = xorm.NewEngine(
-		viper.GetString("db.driver"),
-		viper.GetString("db.connect"))
+	var defaultEngin, err = xorm.NewEngine(*dbDriver, *dbConnStr)
+	if err != nil {
+		panic(err)
+	}
 	tenant.SetSysEngine(defaultEngin)
 
 	app := fiber.New()
@@ -72,13 +80,11 @@ func CreateApp() *fiber.App {
 		MaxAge:        3600,
 	}
 
-	app.Static(viper.GetString("static.path"),
-		viper.GetString("static.root"), staticConf)
+	app.Static(*staticPath, *staticRoot, staticConf)
 	return app
 }
 
 func main() {
 	app := CreateApp()
-	addr := fmt.Sprintf("%s:%d", viper.GetString("host.addr"), viper.GetInt("host.port"))
-	app.Listen(addr)
+	app.Listen(*serverAddress)
 }
