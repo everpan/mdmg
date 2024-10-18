@@ -5,12 +5,11 @@ import (
 	"github.com/Microsoft/go-winio/pkg/guid"
 	"github.com/everpan/mdmg/pkg/base/log"
 	"github.com/everpan/mdmg/pkg/base/store"
+	"github.com/everpan/mdmg/pkg/config"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"xorm.io/xorm"
 )
-
-const DefaultGuidNamespace = "11111111-1111-1111-1111-111111111111"
 
 type IcTenantInfo struct {
 	Idx             uint32 `json:"idx" xorm:"tenant_id pk autoincr"`
@@ -26,30 +25,75 @@ type IcTenantInfo struct {
 }
 
 var (
-	cache       = store.OneLevelMap[string, *IcTenantInfo]{}
-	namespace   guid.GUID
-	sysEngine   *xorm.Engine // 租户管理为最高权限，运营商才可
-	engineCache = store.OneLevelMap[string, *xorm.Engine]{}
+	cache     = store.OneLevelMap[string, *IcTenantInfo]{}
+	namespace guid.GUID
+	sysEngine *xorm.Engine // 租户管理为最高权限，运营商才可
 )
 
 var (
-	DefaultInfo = NewTenantInfo(uint32(1),
-		DefaultGuidNamespace, "default_test", "默认租户", "", false, true)
-	DefaultHostInfo = NewTenantInfo(uint32(2),
-		"22222222-2222-2222-2222-222222222222", "host", "运营商", "", true, true)
+	logger         = log.GetLogger()
+	Enable         bool
+	TestTenantInfo *IcTenantInfo
+	HostTenantInfo *IcTenantInfo
 )
 
-// SetSysEngine 专门用于系统管理，区别于应用db
-func SetSysEngine(e *xorm.Engine) {
-	sysEngine = e
-	engineCache.Set(e.DataSourceName(), e)
+func init() {
+	var (
+		hostSid = "22222222-2222-2222-2222-222222222222"
+		TestSid = "11111111-1111-1111-1111-111111111111"
+	)
+	namespace, _ = guid.FromString(hostSid)
+	TestTenantInfo = NewTenantInfo(0, TestSid, "test-tenant", "测试", "", true, true)
+	HostTenantInfo = NewTenantInfo(0, hostSid, "host-tenant", "运营商", "", false, true)
+	TestTenantInfo.Driver = "sqlite3"
+	TestTenantInfo.ConnectString = "ic-default.db"
+	HostTenantInfo.Driver = "sqlite3"
+	HostTenantInfo.ConnectString = "ic-default.db"
+
+	viper.SetDefault("tenant.db-driver", "sqlite3")
+	viper.SetDefault("tenant.db-connect", "./ic-tenant.db")
+	viper.SetDefault("tenant.enable", false)
+	config.RegisterReloadViperFunc(updateConfig)
 }
 
-func init() {
-	namespace, _ = guid.FromString(DefaultGuidNamespace)
-	DefaultInfo.SId = DefaultGuidNamespace
-	DefaultHostInfo.SId = "22222222-2222-2222-2222-222222222222"
-	viper.Set("a", "a")
+func initTable(engine *xorm.Engine) {
+	t := &IcTenantInfo{}
+	err := engine.CreateTables(t)
+	if nil != err {
+		_ = engine.CreateUniques(t)
+	}
+}
+
+func updateConfig() error {
+	Enable = viper.GetBool("tenant.enable")
+	if Enable {
+		driver := viper.GetString("tenant.db-driver")
+		connectString := viper.GetString("tenant.db-connect")
+
+		logger.Info("tenant admin engine", zap.String("driver", driver))
+
+		engine, err := config.AcquireEngine(driver, connectString)
+		if err != nil {
+			panic(err)
+		}
+		sysEngine = engine
+		initTable(engine)
+		TestTenantInfo = syncInfoFromDB(TestTenantInfo)
+		HostTenantInfo = syncInfoFromDB(HostTenantInfo)
+	}
+	logger.Info("tenant-config", zap.Any("host-sid", HostTenantInfo),
+		zap.Any("test-sid", TestTenantInfo), zap.Bool("enable", Enable))
+	return nil
+}
+
+func syncInfoFromDB(info *IcTenantInfo) *IcTenantInfo {
+	ok, _ := sysEngine.Exist(info)
+	if !ok {
+		info.Save()
+	} else {
+		info, _ = AcquireInfoBySid(TestTenantInfo.SId)
+	}
+	return info
 }
 
 func NewTenantInfo(idx uint32, sid string, en string, cn string,
@@ -73,13 +117,8 @@ func (t *IcTenantInfo) Save() error {
 	return err
 }
 
-func (t *IcTenantInfo) InitTable(engine *xorm.Engine) error {
-	err := engine.CreateTables(t)
-	if nil != err {
-		return err
-	}
-	_ = engine.CreateUniques(t)
-	return nil
+func (t *IcTenantInfo) IsTest() bool {
+	return t.IsTestEnv
 }
 
 func AcquireInfoBySid(sid string) (*IcTenantInfo, error) {
@@ -102,23 +141,4 @@ func AcquireInfoBySid(sid string) (*IcTenantInfo, error) {
 		log.GetLogger().Error("query tenant", zap.String("sid", sid), zap.Error(err))
 	}
 	return nil, err
-}
-
-// AcquireEngineForTenant 获取租户的db连接；
-// 以connect string作为key
-func AcquireEngineForTenant(t *IcTenantInfo) (*xorm.Engine, error) {
-	driver, connStr := t.Driver, t.ConnectString
-	eng, ok := engineCache.Get(connStr)
-	if ok {
-		return eng, nil
-	}
-	var err error
-	eng, err = xorm.NewEngine(driver, connStr)
-	if err != nil {
-		log.GetLogger().Error("create sysEngine failed",
-			zap.String("driver", driver), zap.String("connStr", connStr), zap.Error(err))
-		return nil, err
-	}
-	engineCache.Set(connStr, eng)
-	return eng, nil
 }

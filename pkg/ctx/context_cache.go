@@ -4,8 +4,8 @@ import (
 	"github.com/everpan/mdmg/pkg/base/log"
 	"github.com/everpan/mdmg/pkg/base/store"
 	"github.com/everpan/mdmg/pkg/base/tenant"
+	"github.com/everpan/mdmg/pkg/config"
 	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -15,10 +15,10 @@ var (
 )
 
 func AcquireIcContextFromTenantId(fc *fiber.Ctx) (*IcContext, error) {
-	tenantSid := fc.GetRespHeader("X-Tenant-Sid", tenant.DefaultGuidNamespace)
-	if tenantSid == tenant.DefaultGuidNamespace {
-		logger.Info("tenant id is the default namespace id", zap.String("id", tenant.DefaultGuidNamespace))
-	}
+	tenantSid := fc.GetRespHeader("X-Tenant-Sid", tenant.TestTenantInfo.SId)
+	//if tenantSid == tenant.TestSid {
+	//	logger.Info("tenant id is the test id", zap.String("id", tenantSid))
+	//}
 	ctx, ok := cache.Get(tenantSid)
 	if !ok {
 		info, err := tenant.AcquireInfoBySid(tenantSid)
@@ -30,7 +30,7 @@ func AcquireIcContextFromTenantId(fc *fiber.Ctx) (*IcContext, error) {
 			e := errors.NewBadRequest("tenantSid:" + tenantSid + " not found")
 			return nil, e
 		}
-		engine, err := tenant.AcquireEngineForTenant(info)
+		engine, err := config.AcquireEngine(info.Driver, info.ConnectString)
 		if nil != err {
 			e := errors.NewBadRequest("can not acquire engine for tenantSid:" + tenantSid + ",error:" + err.Error())
 			return nil, e
